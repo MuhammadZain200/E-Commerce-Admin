@@ -1,20 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/axios'; // Optional, if you need extra API calls
 
 export default function Login() {
   const { login, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState('');
 
   // Redirect logged-in users away from login page
   useEffect(() => {
-    if (user) navigate('/');
+    if (user) {
+      // Redirect logged-in users to their role dashboard
+      if (user.role === 'admin') navigate('/dashboard/admin');
+      else if (user.role === 'staff') navigate('/dashboard/staff');
+      else navigate('/dashboard/user');
+    }
   }, [user, navigate]);
+
+  // Show success message if redirected from registration
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccess(location.state.message);
+    }
+  }, [location]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -26,8 +40,13 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await login(formData.email, formData.password);
-      navigate('/'); // Redirect after login
+      // login() should return the user object
+      const loggedInUser = await login(formData.email, formData.password);
+
+      // Redirect based on role
+      if (loggedInUser.role === 'admin') navigate('/dashboard/admin');
+      else if (loggedInUser.role === 'staff') navigate('/dashboard/staff');
+      else navigate('/dashboard/user');
     } catch (err) {
       const message =
         err.response?.data?.message ||
@@ -43,6 +62,7 @@ export default function Login() {
     input: { width: '100%', padding: '8px', boxSizing: 'border-box' },
     button: { padding: '10px 16px', cursor: 'pointer' },
     error: { color: 'red', marginBottom: '10px' },
+    success: { color: 'green', marginBottom: '10px' },
     formGroup: { marginBottom: '15px' },
   };
 
@@ -50,6 +70,7 @@ export default function Login() {
     <div style={styles.container}>
       <h2>Login</h2>
 
+      {success && <p style={styles.success}>{success}</p>}
       {error && <p style={styles.error}>{error}</p>}
 
       <form onSubmit={handleSubmit}>
