@@ -15,7 +15,7 @@ const generateToken = (user) => {
 // 1️⃣ Register Controller
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role = 'staff' } = req.body;
 
     // Validate input
     if (!name || !email || !password) {
@@ -43,8 +43,8 @@ exports.register = async (req, res) => {
       }
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error during registration:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
@@ -59,7 +59,7 @@ exports.login = async (req, res) => {
     }
 
     // Check if user exists
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select('+password');
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
