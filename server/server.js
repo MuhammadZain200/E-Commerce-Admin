@@ -1,4 +1,6 @@
-// Load environment variables from root .env
+// backend/server.js
+
+// Load environment variables
 require('dotenv').config({ path: '../.env' });
 
 const express = require('express');
@@ -17,19 +19,17 @@ if (!process.env.MONGO_URL) {
   process.exit(1);
 }
 
-// JSON parser middleware
-app.use(express.json());
-
-// CORS middleware
-app.use(cors({ origin: 'http://localhost:3000' }));
+// Middlewares
+app.use(express.json()); // parse JSON bodies
+app.use(cors({ origin: 'http://localhost:3000' })); // allow frontend
 
 // Import routes
-const adminRoutes = require('./routes/adminRoutes');
-const authRoutes = require('./routes/authRoutes');
+const adminRoutes = require('./routes/adminRoutes'); // Product routes
+const authRoutes = require('./routes/authRoutes');   // Auth routes (login, register, etc)
 
 // Mount routes
-app.use('/api/admin', adminRoutes);
-app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes); // all product routes
+app.use('/api/auth', authRoutes);   // authentication routes
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URL)
