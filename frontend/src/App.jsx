@@ -5,6 +5,7 @@ import UserDashboard from './pages/UserDashboard';
 import StaffDashboard from './pages/StaffDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import Products from './pages/Products';
+import Orders from './pages/Orders';
 import RoleProtectedRoute from './components/RoleProtectedRoute';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -50,6 +51,16 @@ function App() {
           element={
             <ProtectedRoute>
               <Products />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Orders route - accessible to all authenticated users */}
+        <Route
+          path="/orders"
+          element={
+            <ProtectedRoute>
+              <Orders />
             </ProtectedRoute>
           }
         />

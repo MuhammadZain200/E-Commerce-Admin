@@ -12,6 +12,7 @@ const {
   createProduct,
   updateProduct,
   toggleProductStatus,
+  deleteProduct,
   getProducts,
 } = require('../controllers/productController');
 const { getDashboardStats } = require('../controllers/dashboardController');
@@ -29,6 +30,9 @@ router.put('/:id', protect, roleMiddleware('admin'), updateProduct);
 
 // Toggle product active/inactive (admin only)
 router.patch('/:id/toggle', protect, roleMiddleware('admin'), toggleProductStatus);
+
+// Delete product (admin only)
+router.delete('/:id', protect, roleMiddleware('admin'), deleteProduct);
 
 // Dashboard stats (any authenticated user - admin/staff)
 router.get('/dashboard/stats', protect, getDashboardStats);

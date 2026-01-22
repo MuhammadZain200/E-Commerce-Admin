@@ -157,23 +157,52 @@
   background: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   margin-bottom: 30px;
+  position: relative;
 }
 
 .topbar-left {
   display: flex;
   align-items: center;
+  flex: 1;
 }
 
-.company-name {
-  font-size: 20px;
+.welcome-text {
+  font-size: 18px;
+  font-weight: 500;
+  color: #666;
+}
+
+.welcome-text .user-name {
+  font-size: 18px;
   font-weight: 600;
   color: #333;
+}
+
+.topbar-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+}
+
+.role-badge {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: white;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
   letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3);
 }
 
 .topbar-right {
   display: flex;
   align-items: center;
+  flex: 1;
+  justify-content: flex-end;
 }
 
 .logout-btn {
@@ -368,10 +397,11 @@
 }
 
 .stock-badge {
-  padding: 4px 10px;
+  padding: 6px 12px;
   border-radius: 12px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
+  display: inline-block;
 }
 
 .stock-badge.in-stock {
@@ -390,10 +420,11 @@
 }
 
 .status-badge {
-  padding: 4px 10px;
+  padding: 6px 12px;
   border-radius: 12px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
+  display: inline-block;
 }
 
 .status-badge.active {

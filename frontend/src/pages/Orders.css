@@ -1,0 +1,209 @@
+.orders-section {
+  background-color: #fff;
+  padding: 30px;
+  margin: 0 30px 30px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.orders-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.orders-header h2 {
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin: 0;
+  color: #333;
+}
+
+.orders-count {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.orders-table-container {
+  overflow-x: auto;
+}
+
+.orders-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.orders-table th {
+  background-color: #f3f4f6;
+  padding: 14px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #666;
+  letter-spacing: 0.5px;
+}
+
+.orders-table td {
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+  color: #333;
+}
+
+.orders-table tbody tr:hover {
+  background-color: #f9f9f9;
+}
+
+.order-id {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: #666;
+}
+
+.customer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.customer-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.customer-email {
+  font-size: 12px;
+  color: #999;
+}
+
+.order-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 250px;
+}
+
+.order-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.item-name {
+  font-weight: 500;
+  color: #333;
+  flex: 1;
+}
+
+.item-quantity {
+  color: #666;
+  font-size: 12px;
+}
+
+.item-price {
+  color: #666;
+  font-size: 12px;
+}
+
+.total-amount {
+  font-weight: 600;
+  font-size: 15px;
+  color: #333;
+}
+
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+  text-transform: capitalize;
+}
+
+.payment-badge {
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.payment-badge.paid {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.payment-badge.pending {
+  background-color: #fff3e0;
+  color: #e65100;
+}
+
+.order-date {
+  font-size: 13px;
+  color: #666;
+}
+
+.status-update-btn {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-update-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ea580c 0%, #dc2626 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(249, 115, 22, 0.3);
+}
+
+.status-update-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.no-action {
+  font-size: 12px;
+  color: #999;
+  font-style: italic;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 14px;
+}
+

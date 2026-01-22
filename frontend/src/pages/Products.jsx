@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchProducts, toggleProductStatus } from '../api/products';
+import { fetchProducts, deleteProduct } from '../api/products';
 import { useAuth } from '../context/AuthContext';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
@@ -36,13 +36,16 @@ export default function Products() {
     loadProducts();
   }, []);
 
-  // Toggle product active/inactive
-  const handleToggle = async (id) => {
-    try {
-      await toggleProductStatus(id);
-      loadProducts();
-    } catch (err) {
-      console.error('Failed to toggle product:', err);
+  // Delete product
+  const handleDelete = async (id, productName) => {
+    if (window.confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone.`)) {
+      try {
+        await deleteProduct(id);
+        loadProducts();
+      } catch (err) {
+        console.error('Failed to delete product:', err);
+        alert(err.response?.data?.message || 'Failed to delete product. Please try again.');
+      }
     }
   };
 
@@ -116,15 +119,9 @@ export default function Products() {
                           <button onClick={() => openEditModal(p)} className="edit-btn">
                             Edit
                           </button>
-                          {p.isActive ? (
-                            <button onClick={() => handleToggle(p._id)} className="disable-btn">
-                              Disable
-                            </button>
-                          ) : (
-                            <button onClick={() => handleToggle(p._id)} className="enable-btn">
-                              Enable
-                            </button>
-                          )}
+                          <button onClick={() => handleDelete(p._id, p.name)} className="delete-btn">
+                            Delete
+                          </button>
                         </>
                       )}
                     </td>

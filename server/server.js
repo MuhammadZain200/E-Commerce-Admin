@@ -26,10 +26,12 @@ app.use(cors({ origin: 'http://localhost:3000' })); // allow frontend
 // Import routes
 const adminRoutes = require('./routes/adminRoutes'); // Product routes
 const authRoutes = require('./routes/authRoutes');   // Auth routes (login, register, etc)
+const orderRoutes = require('./routes/orderRoutes');  // Order routes
 
 // Mount routes
 app.use('/api/admin', adminRoutes); // all product routes
 app.use('/api/auth', authRoutes);   // authentication routes
+app.use('/api/orders', orderRoutes); // order routes
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URL)

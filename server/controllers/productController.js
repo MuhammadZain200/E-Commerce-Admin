@@ -37,6 +37,19 @@ const toggleProductStatus = async (req, res) => {
   }
 };
 
+// Delete product (hard delete)
+const deleteProduct = async (req, res) => {
+  try {
+    const deletedProduct = await Product.findByIdAndDelete(req.params.id);
+    if (!deletedProduct) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    res.json({ message: 'Product deleted successfully', product: deletedProduct });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 // List all products
 const getProducts = async (req, res) => {
   try {
@@ -51,5 +64,6 @@ module.exports = {
   createProduct,
   updateProduct,
   toggleProductStatus,
+  deleteProduct,
   getProducts,
 };

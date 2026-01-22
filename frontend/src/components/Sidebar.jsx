@@ -11,7 +11,7 @@ export default function Sidebar({ user }) {
   const menuItems = [
     { name: 'DASHBOARD', icon: '📊', path: `/dashboard/${user.role}` },
     { name: 'PRODUCTS', icon: '📦', path: '/products' },
-    { name: 'ORDERS', icon: '🛒', path: '/orders', disabled: true }, // Will be enabled in Step 3
+    { name: 'ORDERS', icon: '🛒', path: '/orders' },
     { name: 'ANALYTICS', icon: '📈', submenu: true },
     { name: 'SETTINGS', icon: '⚙️', submenu: true },
   ];
@@ -21,16 +21,6 @@ export default function Sidebar({ user }) {
       <div className="sidebar-brand">
         <div className="brand-square">EA</div>
         <div className="brand-text">E-COMMERCE ADMIN</div>
-      </div>
-      
-      <div className="sidebar-user">
-        <div className="user-avatar">
-          {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
-        </div>
-        <div className="user-info">
-          <div className="user-name">{user.name || 'User'}</div>
-        </div>
-        <span className="dropdown-arrow">▼</span>
       </div>
 
       <nav className="sidebar-nav">
