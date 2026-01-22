@@ -4,7 +4,9 @@ import Register from './pages/Register';
 import UserDashboard from './pages/UserDashboard';
 import StaffDashboard from './pages/StaffDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import Products from './pages/Products';
 import RoleProtectedRoute from './components/RoleProtectedRoute';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -39,6 +41,16 @@ function App() {
             <RoleProtectedRoute allowedRoles={['admin']}>
               <AdminDashboard />
             </RoleProtectedRoute>
+          }
+        />
+
+        {/* Products route - accessible to all authenticated users */}
+        <Route
+          path="/products"
+          element={
+            <ProtectedRoute>
+              <Products />
+            </ProtectedRoute>
           }
         />
 

@@ -1,7 +1,7 @@
-import Product from '../models/Product.js';
+const Product = require('../models/Product');
 
 // Create product (Admin only)
-export const createProduct = async (req, res) => {
+const createProduct = async (req, res) => {
   try {
     const product = new Product(req.body);
     const savedProduct = await product.save();
@@ -12,7 +12,7 @@ export const createProduct = async (req, res) => {
 };
 
 // Update product
-export const updateProduct = async (req, res) => {
+const updateProduct = async (req, res) => {
   try {
     const updatedProduct = await Product.findByIdAndUpdate(
       req.params.id,
@@ -26,7 +26,7 @@ export const updateProduct = async (req, res) => {
 };
 
 // Soft delete product
-export const toggleProductStatus = async (req, res) => {
+const toggleProductStatus = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     product.isActive = !product.isActive;
@@ -38,11 +38,18 @@ export const toggleProductStatus = async (req, res) => {
 };
 
 // List all products
-export const getProducts = async (req, res) => {
+const getProducts = async (req, res) => {
   try {
     const products = await Product.find();
     res.json(products);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
+};
+
+module.exports = {
+  createProduct,
+  updateProduct,
+  toggleProductStatus,
+  getProducts,
 };

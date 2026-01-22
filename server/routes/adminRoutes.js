@@ -7,13 +7,14 @@ const router = express.Router();
 const { protect } = require('../middleware/authMiddleware');
 const roleMiddleware = require('../middleware/roleMiddleware');
 
-// Import product controller
+// Import controllers
 const {
   createProduct,
   updateProduct,
   toggleProductStatus,
   getProducts,
-} = require('../controllers/productController'); // make sure path is correct
+} = require('../controllers/productController');
+const { getDashboardStats } = require('../controllers/dashboardController');
 
 // ✅ Routes
 
@@ -28,6 +29,9 @@ router.put('/:id', protect, roleMiddleware('admin'), updateProduct);
 
 // Toggle product active/inactive (admin only)
 router.patch('/:id/toggle', protect, roleMiddleware('admin'), toggleProductStatus);
+
+// Dashboard stats (any authenticated user - admin/staff)
+router.get('/dashboard/stats', protect, getDashboardStats);
 
 // Optional test route
 router.get(

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate, useLocation } from 'react-router-dom';
-import api from '../api/axios'; // Optional, if you need extra API calls
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import './Login.css';
 
 export default function Login() {
   const { login, user } = useAuth();
@@ -32,6 +32,7 @@ export default function Login() {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError(''); // Clear error when user types
   };
 
   const handleSubmit = async (e) => {
@@ -57,55 +58,75 @@ export default function Login() {
     }
   };
 
-  const styles = {
-    container: { maxWidth: '400px', margin: '50px auto' },
-    input: { width: '100%', padding: '8px', boxSizing: 'border-box' },
-    button: { padding: '10px 16px', cursor: 'pointer' },
-    error: { color: 'red', marginBottom: '10px' },
-    success: { color: 'green', marginBottom: '10px' },
-    formGroup: { marginBottom: '15px' },
-  };
-
   return (
-    <div style={styles.container}>
-      <h2>Login</h2>
-
-      {success && <p style={styles.success}>{success}</p>}
-      {error && <p style={styles.error}>{error}</p>}
-
-      <form onSubmit={handleSubmit}>
-        <div style={styles.formGroup}>
-          <label>Email:</label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            style={styles.input}
-          />
+    <div className="auth-container">
+      <div className="auth-card">
+        <div className="auth-header">
+          <div className="auth-logo">
+            <div className="logo-square">EA</div>
+            <div className="logo-text">E-COMMERCE ADMIN</div>
+          </div>
+          <h1>Welcome Back</h1>
+          <p>Sign in to your account</p>
         </div>
 
-        <div style={styles.formGroup}>
-          <label>Password:</label>
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-            style={styles.input}
-          />
+        {success && <div className="success-message">{success}</div>}
+        {error && <div className="error-message">{error}</div>}
+
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="form-group">
+            <label htmlFor="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              placeholder="Enter your email"
+              className="form-input"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              placeholder="Enter your password"
+              className="form-input"
+            />
+          </div>
+
+          <button 
+            type="submit" 
+            className="auth-button" 
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <span className="spinner"></span>
+                Logging in...
+              </>
+            ) : (
+              'Login'
+            )}
+          </button>
+        </form>
+
+        <div className="auth-footer">
+          <p>
+            Don't have an account?{' '}
+            <Link to="/register" className="auth-link">
+              Register here
+            </Link>
+          </p>
         </div>
-
-        <button type="submit" style={styles.button} disabled={loading}>
-          {loading ? 'Logging in...' : 'Login'}
-        </button>
-      </form>
-
-      <p className="register-link">
-        Don't have an account? <a href="/register">Register here</a>
-      </p>
+      </div>
     </div>
   );
 }
