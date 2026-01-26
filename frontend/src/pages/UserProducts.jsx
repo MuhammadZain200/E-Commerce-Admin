@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getProducts, getCategories } from '../api/userProducts';
 import { addToCart } from '../api/cart';
+import UserNavbar from '../components/UserNavbar';
 import './UserProducts.css';
 
 export default function UserProducts() {
@@ -93,6 +94,7 @@ export default function UserProducts() {
 
   return (
     <div className="user-products-page">
+      <UserNavbar />
       <h1>🛍️ Browse Products</h1>
 
       {/* Filters */}

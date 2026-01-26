@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getCart, updateCartItem, removeFromCart, clearCart } from '../api/cart';
+import UserNavbar from '../components/UserNavbar';
 import './UserCart.css';
 
 export default function UserCart() {
@@ -91,6 +92,7 @@ export default function UserCart() {
   if (!cart || !cart.items || cart.items.length === 0) {
     return (
       <div className="user-cart-page">
+        <UserNavbar />
         <h1>🛒 Shopping Cart</h1>
         <div className="empty-cart">
           <p>Your cart is empty</p>
@@ -102,6 +104,7 @@ export default function UserCart() {
 
   return (
     <div className="user-cart-page">
+      <UserNavbar />
       <div className="cart-header">
         <h1>🛒 Shopping Cart</h1>
         <button className="clear-cart-btn" onClick={handleClearCart}>

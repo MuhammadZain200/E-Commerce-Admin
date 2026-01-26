@@ -5,6 +5,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { fetchOrders } from '../api/orders';
+import UserNavbar from '../components/UserNavbar';
 import './UserOrders.css';
 
 export default function UserOrders() {
@@ -54,6 +55,7 @@ export default function UserOrders() {
   if (loading) {
     return (
       <div className="user-orders-page">
+        <UserNavbar />
         <div className="loading-state">Loading orders...</div>
       </div>
     );
@@ -61,6 +63,7 @@ export default function UserOrders() {
 
   return (
     <div className="user-orders-page">
+      <UserNavbar />
       <h1>📦 My Orders</h1>
 
       {error && <div className="error-message">{error}</div>}

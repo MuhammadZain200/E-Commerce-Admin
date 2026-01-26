@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getCart } from '../api/cart';
 import { checkoutFromCart } from '../api/orders';
+import UserNavbar from '../components/UserNavbar';
 import './Checkout.css';
 
 export default function Checkout() {
@@ -60,6 +61,7 @@ export default function Checkout() {
   if (loading) {
     return (
       <div className="checkout-page">
+        <UserNavbar />
         <div className="loading-state">Loading...</div>
       </div>
     );
@@ -71,6 +73,7 @@ export default function Checkout() {
 
   return (
     <div className="checkout-page">
+      <UserNavbar />
       <h1>✅ Checkout</h1>
 
       {error && <div className="error-message">{error}</div>}
