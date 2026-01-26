@@ -30,6 +30,18 @@ const userSchema = new mongoose.Schema(
       enum: ['admin', 'staff', 'user'],
       default: 'user',
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+      // If false, user cannot login or access the system
+    },
+    assignedByAdmin: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+      // Tracks which admin assigned the "admin" role to this user
+      // Only this admin can revoke admin rights or delete the account
+    },
   },
   { timestamps: true }
 );

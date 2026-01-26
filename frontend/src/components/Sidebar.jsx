@@ -12,7 +12,7 @@ export default function Sidebar({ user }) {
     { name: 'DASHBOARD', icon: '📊', path: `/dashboard/${user.role}` },
     { name: 'PRODUCTS', icon: '📦', path: '/products' },
     { name: 'ORDERS', icon: '🛒', path: '/orders' },
-    { name: 'ANALYTICS', icon: '📈', submenu: true },
+    { name: 'ANALYTICS', icon: '📈', path: user.role === 'admin' ? '/analytics' : null, disabled: user.role !== 'admin' },
     { name: 'SETTINGS', icon: '⚙️', submenu: true },
   ];
 
@@ -42,14 +42,36 @@ export default function Sidebar({ user }) {
                 {item.submenu && <span className="dropdown-arrow">▼</span>}
               </NavLink>
             ) : (
-              <div 
-                className={`nav-item ${activeMenu === item.name ? 'active' : ''}`}
-                onClick={() => toggleMenu(item.name)}
-              >
-                <span className="nav-icon">{item.icon}</span>
-                <span className="nav-text">{item.name}</span>
-                <span className="dropdown-arrow">▼</span>
-              </div>
+              <>
+                <div 
+                  className={`nav-item ${activeMenu === item.name ? 'active' : ''}`}
+                  onClick={() => toggleMenu(item.name)}
+                >
+                  <span className="nav-icon">{item.icon}</span>
+                  <span className="nav-text">{item.name}</span>
+                  <span className="dropdown-arrow">▼</span>
+                </div>
+                {item.submenu && activeMenu === item.name && item.name === 'SETTINGS' && user.role === 'admin' && (
+                  <div className="submenu">
+                    <NavLink 
+                      to="/settings" 
+                      className={({ isActive }) => `submenu-item ${isActive ? 'active' : ''}`}
+                      onClick={() => setActiveMenu(null)}
+                    >
+                      <span className="submenu-icon">⚙️</span>
+                      <span>Store Settings</span>
+                    </NavLink>
+                    <NavLink 
+                      to="/users" 
+                      className={({ isActive }) => `submenu-item ${isActive ? 'active' : ''}`}
+                      onClick={() => setActiveMenu(null)}
+                    >
+                      <span className="submenu-icon">👥</span>
+                      <span>User Management</span>
+                    </NavLink>
+                  </div>
+                )}
+              </>
             )}
           </div>
         ))}

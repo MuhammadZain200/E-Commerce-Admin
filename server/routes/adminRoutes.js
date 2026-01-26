@@ -11,11 +11,11 @@ const roleMiddleware = require('../middleware/roleMiddleware');
 const {
   createProduct,
   updateProduct,
-  toggleProductStatus,
   deleteProduct,
   getProducts,
 } = require('../controllers/productController');
 const { getDashboardStats } = require('../controllers/dashboardController');
+const { getAnalytics } = require('../controllers/analyticsController');
 
 // ✅ Routes
 
@@ -28,14 +28,14 @@ router.post('/', protect, roleMiddleware('admin'), createProduct);
 // Update product by ID (admin only)
 router.put('/:id', protect, roleMiddleware('admin'), updateProduct);
 
-// Toggle product active/inactive (admin only)
-router.patch('/:id/toggle', protect, roleMiddleware('admin'), toggleProductStatus);
-
 // Delete product (admin only)
 router.delete('/:id', protect, roleMiddleware('admin'), deleteProduct);
 
 // Dashboard stats (any authenticated user - admin/staff)
 router.get('/dashboard/stats', protect, getDashboardStats);
+
+// Analytics endpoint (admin only)
+router.get('/analytics', protect, roleMiddleware('admin'), getAnalytics);
 
 // Optional test route
 router.get(

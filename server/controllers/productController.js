@@ -25,19 +25,7 @@ const updateProduct = async (req, res) => {
   }
 };
 
-// Soft delete product
-const toggleProductStatus = async (req, res) => {
-  try {
-    const product = await Product.findById(req.params.id);
-    product.isActive = !product.isActive;
-    await product.save();
-    res.json(product);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
-// Delete product (hard delete)
+// Delete product
 const deleteProduct = async (req, res) => {
   try {
     const deletedProduct = await Product.findByIdAndDelete(req.params.id);
@@ -63,7 +51,6 @@ const getProducts = async (req, res) => {
 module.exports = {
   createProduct,
   updateProduct,
-  toggleProductStatus,
   deleteProduct,
   getProducts,
 };

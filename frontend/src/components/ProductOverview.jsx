@@ -19,7 +19,6 @@ export default function ProductOverview({ recentProducts, lowStockItems }) {
                     <th>Product</th>
                     <th>Price</th>
                     <th>Stock</th>
-                    <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -30,11 +29,6 @@ export default function ProductOverview({ recentProducts, lowStockItems }) {
                       <td>
                         <span className={`stock-badge ${product.stock === 0 ? 'out-of-stock' : product.stock < 10 ? 'low-stock' : 'in-stock'}`}>
                           {product.stock}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`status-badge ${product.isActive ? 'active' : 'inactive'}`}>
-                          {product.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>
                     </tr>

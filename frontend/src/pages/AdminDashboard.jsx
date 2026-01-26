@@ -11,8 +11,6 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState({
     totalProducts: 0,
-    activeProducts: 0,
-    inactiveProducts: 0,
     lowStockProducts: 0,
     outOfStockProducts: 0,
     totalInventoryValue: 0,
@@ -81,31 +79,31 @@ export default function AdminDashboard() {
         {/* Stats Cards Section */}
         <div className="stats-grid">
           <StatsCard 
-            title="Total Products" 
-            value={stats.totalProducts} 
-            icon="📦" 
+            title="Total Orders" 
+            value={stats.totalOrders} 
+            icon="📋" 
+            color="#9C27B0"
+          />
+          <StatsCard 
+            title="Pending Orders" 
+            value={stats.pendingOrders} 
+            icon="⏳" 
             color="#FF9800"
+            subtitle={{ text: `${stats.totalOrders - stats.pendingOrders} completed`, icon: "✅" }}
           />
           <StatsCard 
-            title="Active Products" 
-            value={stats.activeProducts} 
-            icon="✅" 
-            color="#4CAF50"
-            subtitle={{ text: `${stats.inactiveProducts} inactive`, icon: "📊" }}
-          />
-          <StatsCard 
-            title="Low Stock" 
+            title="Low Stock Products" 
             value={stats.lowStockProducts} 
             icon="⚠️" 
             color="#F44336"
             subtitle={{ text: `${stats.outOfStockProducts} out of stock`, icon: "🚨" }}
           />
           <StatsCard 
-            title="Inventory Value" 
-            value={`$${parseFloat(stats.totalInventoryValue || 0).toLocaleString()}`} 
+            title="Total Revenue" 
+            value={`$${parseFloat(stats.totalRevenue || 0).toLocaleString()}`} 
             icon="💰" 
-            color="#2196F3"
-            subtitle={{ text: "Total active inventory", icon: "📈" }}
+            color="#4CAF50"
+            subtitle={{ text: "From delivered orders", icon: "📈" }}
           />
         </div>
 

@@ -11,8 +11,6 @@ export default function UserDashboard() {
   const { user } = useAuth();
   const [stats, setStats] = useState({
     totalProducts: 0,
-    activeProducts: 0,
-    inactiveProducts: 0,
     lowStockProducts: 0,
     outOfStockProducts: 0,
     totalInventoryValue: 0,
@@ -87,25 +85,24 @@ export default function UserDashboard() {
             color="#FF9800"
           />
           <StatsCard 
-            title="Active Products" 
-            value={stats.activeProducts} 
-            icon="✅" 
-            color="#4CAF50"
-            subtitle={{ text: `${stats.inactiveProducts} inactive`, icon: "📊" }}
-          />
-          <StatsCard 
-            title="Low Stock" 
+            title="Low Stock Products" 
             value={stats.lowStockProducts} 
             icon="⚠️" 
             color="#F44336"
             subtitle={{ text: `${stats.outOfStockProducts} out of stock`, icon: "🚨" }}
           />
           <StatsCard 
+            title="Total Orders" 
+            value={stats.totalOrders} 
+            icon="📋" 
+            color="#9C27B0"
+          />
+          <StatsCard 
             title="Inventory Value" 
             value={`$${parseFloat(stats.totalInventoryValue || 0).toLocaleString()}`} 
             icon="💰" 
             color="#2196F3"
-            subtitle={{ text: "Total active inventory", icon: "📈" }}
+            subtitle={{ text: "Total inventory", icon: "📈" }}
           />
         </div>
 

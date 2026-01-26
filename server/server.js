@@ -27,9 +27,13 @@ app.use(cors({ origin: 'http://localhost:3000' })); // allow frontend
 const adminRoutes = require('./routes/adminRoutes'); // Product routes
 const authRoutes = require('./routes/authRoutes');   // Auth routes (login, register, etc)
 const orderRoutes = require('./routes/orderRoutes');  // Order routes
+const settingsRoutes = require('./routes/settingsRoutes'); // Settings & User management routes
 
 // Mount routes
-app.use('/api/admin', adminRoutes); // all product routes
+// IMPORTANT: Mount settingsRoutes BEFORE adminRoutes to avoid route conflicts
+// Specific routes (/settings, /users) must come before parameterized routes (/:id)
+app.use('/api/admin', settingsRoutes); // settings & user management routes (specific paths first)
+app.use('/api/admin', adminRoutes); // all product routes (parameterized routes)
 app.use('/api/auth', authRoutes);   // authentication routes
 app.use('/api/orders', orderRoutes); // order routes
 

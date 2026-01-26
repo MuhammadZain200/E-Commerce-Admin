@@ -6,6 +6,9 @@ import StaffDashboard from './pages/StaffDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import Products from './pages/Products';
 import Orders from './pages/Orders';
+import Analytics from './pages/Analytics';
+import Settings from './pages/Settings';
+import UserManagement from './pages/UserManagement';
 import RoleProtectedRoute from './components/RoleProtectedRoute';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -62,6 +65,36 @@ function App() {
             <ProtectedRoute>
               <Orders />
             </ProtectedRoute>
+          }
+        />
+
+        {/* Analytics route - admin only */}
+        <Route
+          path="/analytics"
+          element={
+            <RoleProtectedRoute allowedRoles={['admin']}>
+              <Analytics />
+            </RoleProtectedRoute>
+          }
+        />
+
+        {/* Settings route - admin only */}
+        <Route
+          path="/settings"
+          element={
+            <RoleProtectedRoute allowedRoles={['admin']}>
+              <Settings />
+            </RoleProtectedRoute>
+          }
+        />
+
+        {/* User Management route - admin only */}
+        <Route
+          path="/users"
+          element={
+            <RoleProtectedRoute allowedRoles={['admin']}>
+              <UserManagement />
+            </RoleProtectedRoute>
           }
         />
 

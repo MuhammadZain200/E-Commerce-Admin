@@ -1,7 +1,9 @@
+const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const Settings = require('../models/Settings');
 
-// Valid status transitions
+// Valid status transitions (sequential flow)
 const STATUS_TRANSITIONS = {
   created: ['paid'],
   paid: ['packed'],
@@ -10,8 +12,27 @@ const STATUS_TRANSITIONS = {
   delivered: [], // Final state
 };
 
+// All possible statuses (for skipping validation)
+const ALL_STATUSES = ['created', 'paid', 'packed', 'shipped', 'delivered'];
+
 // Validate status transition
-const isValidTransition = (currentStatus, newStatus) => {
+// If allowStatusSkipping is true, any status transition is allowed (except to delivered from created)
+// If false, only sequential transitions are allowed
+const isValidTransition = (currentStatus, newStatus, allowStatusSkipping = false) => {
+  // Delivered is always final
+  if (currentStatus === 'delivered') {
+    return false;
+  }
+  
+  // If skipping is allowed, allow any transition except delivered from created
+  if (allowStatusSkipping) {
+    if (currentStatus === 'created' && newStatus === 'delivered') {
+      return false; // Can't skip directly to delivered
+    }
+    return ALL_STATUSES.includes(newStatus);
+  }
+  
+  // Otherwise, only allow sequential transitions
   return STATUS_TRANSITIONS[currentStatus]?.includes(newStatus) || false;
 };
 
@@ -25,8 +46,11 @@ const createOrder = async (req, res) => {
       return res.status(400).json({ message: 'Order must have at least one item' });
     }
 
+    // Get settings to calculate tax
+    const settings = await Settings.getSettings();
+
     // Validate items and check stock availability
-    let totalAmount = 0;
+    let subtotal = 0; // Amount before tax
     const validatedItems = [];
 
     for (const item of items) {
@@ -34,10 +58,6 @@ const createOrder = async (req, res) => {
       
       if (!product) {
         return res.status(404).json({ message: `Product ${item.productId} not found` });
-      }
-
-      if (!product.isActive) {
-        return res.status(400).json({ message: `Product ${product.name} is not active` });
       }
 
       if (product.stock < item.quantity) {
@@ -49,7 +69,7 @@ const createOrder = async (req, res) => {
       // Use current product price (not the price from request, to prevent price manipulation)
       const itemPrice = product.price;
       const itemTotal = itemPrice * item.quantity;
-      totalAmount += itemTotal;
+      subtotal += itemTotal;
 
       validatedItems.push({
         productId: product._id,
@@ -58,10 +78,14 @@ const createOrder = async (req, res) => {
       });
     }
 
+    // Calculate tax and total amount
+    const taxAmount = (subtotal * settings.taxRate) / 100;
+    const totalAmount = subtotal + taxAmount;
+
     // Create order
     const order = new Order({
       items: validatedItems,
-      totalAmount,
+      totalAmount: Math.round(totalAmount * 100) / 100, // Round to 2 decimal places
       status: 'created',
       paymentStatus: 'pending',
       createdBy: userId,
@@ -96,41 +120,108 @@ const updateOrderStatus = async (req, res) => {
       return res.status(404).json({ message: 'Order not found' });
     }
 
-    // Check if status transition is valid
-    if (!isValidTransition(order.status, status)) {
+    // Get settings to check order rules
+    const settings = await Settings.getSettings();
+
+    // Check if order is paid and editing is not allowed
+    if (order.paymentStatus === 'paid' && !settings.allowEditingPaidOrders) {
       return res.status(400).json({ 
-        message: `Invalid status transition from ${order.status} to ${status}` 
+        message: 'Cannot modify paid orders. Editing paid orders is disabled in settings.' 
       });
     }
 
-    // If transitioning to 'paid', decrease stock
-    if (status === 'paid' && order.status === 'created') {
-      // Use transaction-like approach (check stock again before decrementing)
-      for (const item of order.items) {
-        const product = await Product.findById(item.productId);
-        
-        if (!product) {
-          return res.status(404).json({ message: `Product ${item.productId} not found` });
-        }
+    // Check if status transition is valid (respect allowStatusSkipping setting)
+    if (!isValidTransition(order.status, status, settings.allowStatusSkipping)) {
+      return res.status(400).json({ 
+        message: `Invalid status transition from ${order.status} to ${status}. Status skipping is ${settings.allowStatusSkipping ? 'allowed' : 'not allowed'}.` 
+      });
+    }
 
-        if (product.stock < item.quantity) {
-          return res.status(400).json({ 
-            message: `Insufficient stock for product. Available: ${product.stock}, Required: ${item.quantity}` 
+    // If transitioning to 'paid', decrease stock atomically
+    if (status === 'paid' && order.status === 'created') {
+      const session = await mongoose.startSession();
+      session.startTransaction();
+
+      try {
+        const stockUpdates = [];
+        const originalStocks = [];
+
+        // First pass: validate all stock and prepare updates
+        for (const item of order.items) {
+          const product = await Product.findById(item.productId).session(session);
+          
+          if (!product) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(404).json({ message: `Product ${item.productId} not found` });
+          }
+
+          if (product.stock < item.quantity) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(400).json({ 
+              message: `Insufficient stock for ${product.name}. Available: ${product.stock}, Required: ${item.quantity}` 
+            });
+          }
+
+          // Store original stock for rollback
+          originalStocks.push({
+            productId: product._id,
+            originalStock: product.stock
+          });
+
+          // Prepare stock update
+          stockUpdates.push({
+            updateOne: {
+              filter: { _id: product._id, stock: { $gte: item.quantity } },
+              update: { $inc: { stock: -item.quantity } }
+            }
           });
         }
 
-        // Decrease stock
-        product.stock -= item.quantity;
-        await product.save();
+        // Atomic bulk update - only succeeds if all products have sufficient stock
+        if (stockUpdates.length > 0) {
+          const bulkResult = await Product.bulkWrite(stockUpdates, { session });
+          
+          // Verify all updates succeeded
+          if (bulkResult.modifiedCount !== stockUpdates.length) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(400).json({ 
+              message: 'Stock update failed. One or more products may have insufficient stock.' 
+            });
+          }
+        }
+
+        // Update payment status and order status
+        order.paymentStatus = 'paid';
+        order.status = status;
+        await order.save({ session });
+
+        // Commit transaction
+        await session.commitTransaction();
+        session.endSession();
+        
+        // Populate for response
+        await order.populate('items.productId', 'name price stock');
+        await order.populate('createdBy', 'name email');
+        
+        return res.json(order);
+      } catch (error) {
+        // Rollback on any error
+        await session.abortTransaction();
+        session.endSession();
+        console.error('Stock update error (rolled back):', error);
+        return res.status(500).json({ 
+          message: 'Failed to update stock. Transaction rolled back.',
+          error: error.message 
+        });
       }
-
-      // Update payment status
-      order.paymentStatus = 'paid';
+    } else {
+      // Update order status (for non-paid transitions)
+      order.status = status;
+      await order.save();
     }
-
-    // Update order status
-    order.status = status;
-    await order.save();
 
     // Populate for response
     await order.populate('items.productId', 'name price stock');

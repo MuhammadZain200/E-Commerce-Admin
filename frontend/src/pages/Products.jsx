@@ -94,7 +94,6 @@ export default function Products() {
                   <th>Name</th>
                   <th>Price</th>
                   <th>Stock</th>
-                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -106,11 +105,6 @@ export default function Products() {
                     <td>
                       <span className={`stock-badge ${p.stock === 0 ? 'out-of-stock' : p.stock < 10 ? 'low-stock' : 'in-stock'}`}>
                         {p.stock}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`status-badge ${p.isActive ? 'active' : 'inactive'}`}>
-                        {p.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td>
