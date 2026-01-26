@@ -7,7 +7,9 @@ import Orders from './pages/Orders';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import UserManagement from './pages/UserManagement';
+import UserHome from './pages/UserHome';
 import UserProducts from './pages/UserProducts';
+import UserProductsList from './pages/UserProductsList';
 import UserCart from './pages/UserCart';
 import Checkout from './pages/Checkout';
 import UserOrders from './pages/UserOrders';
@@ -106,10 +108,26 @@ function App() {
 
         {/* User routes - user only */}
         <Route
+          path="/user/home"
+          element={
+            <RoleProtectedRoute allowedRoles={['user']}>
+              <UserHome />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
           path="/user/products"
           element={
             <RoleProtectedRoute allowedRoles={['user']}>
               <UserProducts />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="/user/products-list"
+          element={
+            <RoleProtectedRoute allowedRoles={['user']}>
+              <UserProductsList />
             </RoleProtectedRoute>
           }
         />

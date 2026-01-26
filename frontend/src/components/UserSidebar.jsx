@@ -34,11 +34,19 @@ export default function UserSidebar() {
 
       <nav className="sidebar-nav">
         <NavLink
+          to="/user/home"
+          className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+        >
+          <span className="nav-icon">🏠</span>
+          <span className="nav-text">Home</span>
+        </NavLink>
+
+        <NavLink
           to="/user/products"
           className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
         >
-          <span className="nav-icon">🛍️</span>
-          <span className="nav-text">Browse Products</span>
+          <span className="nav-icon">📊</span>
+          <span className="nav-text">Categories</span>
         </NavLink>
 
         <NavLink

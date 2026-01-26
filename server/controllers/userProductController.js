@@ -62,6 +62,7 @@ exports.getProducts = async (req, res) => {
 // GET /api/products/categories
 // ============================================
 // Get all categories and subcategories for filtering
+// Includes product counts per category
 exports.getCategoriesForFilter = async (req, res) => {
   try {
     const categories = await Category.find().sort({ name: 1 });
@@ -69,10 +70,24 @@ exports.getCategoriesForFilter = async (req, res) => {
       .populate('categoryId', 'name')
       .sort({ name: 1 });
 
+    // Get product counts for each category
+    const categoriesWithCounts = await Promise.all(
+      categories.map(async (category) => {
+        const productCount = await Product.countDocuments({
+          categoryId: category._id,
+          isActive: true,
+        });
+        return {
+          ...category.toObject(),
+          productCount,
+        };
+      })
+    );
+
     res.json({
       success: true,
       data: {
-        categories,
+        categories: categoriesWithCounts,
         subCategories,
       },
     });
