@@ -24,9 +24,14 @@ export default function Products() {
     setLoading(true);
     try {
       const res = await fetchProducts();
-      setProducts(res.data);
+      // Handle different response formats
+      const productsData = Array.isArray(res.data) 
+        ? res.data 
+        : (res.data?.data || res.data?.products || []);
+      setProducts(Array.isArray(productsData) ? productsData : []);
     } catch (err) {
       console.error('Failed to fetch products:', err);
+      setProducts([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -34,6 +39,9 @@ export default function Products() {
 
   useEffect(() => {
     loadProducts();
+    // Refresh products every 5 seconds for real-time updates
+    const interval = setInterval(loadProducts, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   // Delete product

@@ -19,6 +19,9 @@ export default function StaffStock() {
 
   useEffect(() => {
     loadProducts();
+    // Refresh products every 5 seconds for real-time updates
+    const interval = setInterval(loadProducts, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadProducts = async () => {
@@ -26,9 +29,11 @@ export default function StaffStock() {
       setLoading(true);
       setError(null);
       const response = await getProductsWithStock();
-      if (response.success) {
-        setProducts(response.data || []);
-      }
+      // Handle different response formats
+      const productsData = response.success 
+        ? (response.data || [])
+        : (Array.isArray(response.data) ? response.data : []);
+      setProducts(Array.isArray(productsData) ? productsData : []);
     } catch (err) {
       console.error('Failed to load products:', err);
       setError('Failed to load products. Please refresh the page.');

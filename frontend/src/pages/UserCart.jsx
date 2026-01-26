@@ -1,21 +1,24 @@
 // File: pages/UserCart.jsx
 //
-// User Cart Page - View and manage shopping cart
+// User Cart Page - Redesigned to match UI design
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import { getCart, updateCartItem, removeFromCart, clearCart } from '../api/cart';
-import UserNavbar from '../components/UserNavbar';
+import UserLayout from '../components/UserLayout';
 import './UserCart.css';
 
 export default function UserCart() {
   const { user } = useAuth();
+  const { refreshCart } = useCart();
   const navigate = useNavigate();
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [updating, setUpdating] = useState({});
+  const [promoCode, setPromoCode] = useState('');
 
   useEffect(() => {
     loadCart();
@@ -43,7 +46,8 @@ export default function UserCart() {
     try {
       setUpdating({ ...updating, [productId]: true });
       await updateCartItem(productId, newQuantity);
-      await loadCart(); // Reload cart
+      await loadCart();
+      refreshCart(); // Update global cart count
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to update quantity');
     } finally {
@@ -56,7 +60,8 @@ export default function UserCart() {
 
     try {
       await removeFromCart(productId);
-      await loadCart(); // Reload cart
+      await loadCart();
+      refreshCart(); // Update global cart count
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to remove item');
     }
@@ -67,7 +72,8 @@ export default function UserCart() {
 
     try {
       await clearCart();
-      await loadCart(); // Reload cart
+      await loadCart();
+      refreshCart(); // Update global cart count
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to clear cart');
     }
@@ -81,93 +87,183 @@ export default function UserCart() {
     navigate('/checkout');
   };
 
+  const handleApplyPromo = () => {
+    // Placeholder for promo code functionality
+    alert('Promo code functionality coming soon!');
+  };
+
+  const calculateTax = () => {
+    if (!cart || cart.taxAmount === undefined) return 0;
+    return cart.taxAmount || 0;
+  };
+
+  const calculateTotal = () => {
+    if (!cart) return 0;
+    return cart.totalWithTax || cart.totalAmount || 0;
+  };
+
   if (loading) {
     return (
-      <div className="user-cart-page">
+      <UserLayout>
         <div className="loading-state">Loading cart...</div>
-      </div>
+      </UserLayout>
     );
   }
 
   if (!cart || !cart.items || cart.items.length === 0) {
     return (
-      <div className="user-cart-page">
-        <UserNavbar />
-        <h1>🛒 Shopping Cart</h1>
-        <div className="empty-cart">
-          <p>Your cart is empty</p>
-          <button onClick={() => navigate('/products')}>Browse Products</button>
+      <UserLayout>
+        <div className="user-cart-page">
+          <div className="breadcrumbs">
+            <span>Home</span> / <span>Shopping Cart</span>
+          </div>
+          <h1>Your Shopping Cart</h1>
+          <div className="empty-cart">
+            <p>Your cart is empty</p>
+            <button className="continue-shopping-btn" onClick={() => navigate('/user/products')}>
+              ← Continue Shopping
+            </button>
+          </div>
         </div>
-      </div>
+      </UserLayout>
     );
   }
 
   return (
-    <div className="user-cart-page">
-      <UserNavbar />
-      <div className="cart-header">
-        <h1>🛒 Shopping Cart</h1>
-        <button className="clear-cart-btn" onClick={handleClearCart}>
-          Clear Cart
-        </button>
-      </div>
+    <UserLayout>
+      <div className="user-cart-page">
+        <div className="breadcrumbs">
+          <span>Home</span> / <span>Shopping Cart</span>
+        </div>
 
-      {error && <div className="error-message">{error}</div>}
+        <div className="cart-header-section">
+          <h1>Your Shopping Cart</h1>
+          <p className="cart-subtitle">
+            You have <strong>{cart.itemCount} items</strong> ready for checkout
+          </p>
+        </div>
 
-      <div className="cart-content">
-        <div className="cart-items">
-          {cart.items.map((item) => (
-            <div key={item.productId} className="cart-item">
-              <div className="item-info">
-                <h3>{item.product.name}</h3>
-                <p className="item-price">${item.product.price.toFixed(2)} each</p>
-                <p className="item-stock">Stock: {item.product.stock}</p>
-              </div>
-              <div className="item-actions">
-                <div className="quantity-controls">
+        {error && <div className="error-message">{error}</div>}
+
+        <div className="cart-main-content">
+          <div className="cart-items-section">
+            {cart.items.map((item) => (
+              <div key={item.productId} className="cart-item-card">
+                <div className="item-image">
+                  <div className="item-image-placeholder">
+                    {item.product.name.charAt(0).toUpperCase()}
+                  </div>
+                </div>
+                <div className="item-details">
+                  <h3 className="item-name">{item.product.name}</h3>
+                  <p className="item-specs">
+                    Stock: {item.product.stock} | SKU: {item.productId.slice(-8)}
+                  </p>
+                  <div className="item-price">${item.product.price.toFixed(2)}</div>
+                </div>
+                <div className="item-quantity">
+                  <div className="quantity-controls">
+                    <button
+                      className="qty-btn"
+                      onClick={() => handleQuantityChange(item.productId, item.quantity - 1)}
+                      disabled={updating[item.productId] || item.quantity <= 1}
+                    >
+                      −
+                    </button>
+                    <span className="qty-value">{item.quantity}</span>
+                    <button
+                      className="qty-btn"
+                      onClick={() => handleQuantityChange(item.productId, item.quantity + 1)}
+                      disabled={updating[item.productId] || item.quantity >= item.product.stock}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+                <div className="item-actions">
                   <button
-                    onClick={() => handleQuantityChange(item.productId, item.quantity - 1)}
-                    disabled={updating[item.productId] || item.quantity <= 1}
+                    className="delete-btn"
+                    onClick={() => handleRemoveItem(item.productId)}
+                    disabled={updating[item.productId]}
+                    title="Remove item"
                   >
-                    -
-                  </button>
-                  <span className="quantity">{item.quantity}</span>
-                  <button
-                    onClick={() => handleQuantityChange(item.productId, item.quantity + 1)}
-                    disabled={updating[item.productId] || item.quantity >= item.product.stock}
-                  >
-                    +
+                    🗑️
                   </button>
                 </div>
-                <p className="item-total">${item.itemTotal.toFixed(2)}</p>
-                <button
-                  className="remove-btn"
-                  onClick={() => handleRemoveItem(item.productId)}
-                  disabled={updating[item.productId]}
-                >
-                  Remove
+              </div>
+            ))}
+
+            <div className="cart-actions">
+              <button className="continue-shopping-btn" onClick={() => navigate('/user/products')}>
+                ← Continue Shopping
+              </button>
+              <button className="clear-cart-btn" onClick={handleClearCart}>
+                Clear Shopping Cart
+              </button>
+            </div>
+          </div>
+
+          <div className="order-summary-sidebar">
+            <h2>Order Summary</h2>
+
+            <div className="promo-section">
+              <p className="promo-label">Have a promo code?</p>
+              <div className="promo-input-group">
+                <input
+                  type="text"
+                  placeholder="CODE2024"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value)}
+                  className="promo-input"
+                />
+                <button className="apply-btn" onClick={handleApplyPromo}>
+                  Apply
                 </button>
               </div>
             </div>
-          ))}
-        </div>
 
-        <div className="cart-summary">
-          <h3>Order Summary</h3>
-          <div className="summary-row">
-            <span>Items:</span>
-            <span>{cart.itemCount}</span>
+            <div className="summary-breakdown">
+              <div className="summary-row">
+                <span>Subtotal:</span>
+                <span>${cart.totalAmount.toFixed(2)}</span>
+              </div>
+              <div className="summary-row">
+                <span>Shipping Estimates:</span>
+                <span className="free-shipping">FREE</span>
+              </div>
+              <div className="summary-row">
+                <span>Estimated Tax:</span>
+                <span>${calculateTax().toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div className="summary-total">
+              <div className="total-label">Total</div>
+              <div className="total-amount">${calculateTotal().toFixed(2)}</div>
+              <div className="total-note">INCLUDING VAT</div>
+            </div>
+
+            <button className="checkout-btn-large" onClick={handleCheckout}>
+              Proceed to Checkout →
+            </button>
+
+            <div className="trust-badges">
+              <div className="trust-badge">
+                <span className="badge-icon">🛡️</span>
+                <span>SECURE</span>
+              </div>
+              <div className="trust-badge">
+                <span className="badge-icon">🚚</span>
+                <span>FAST</span>
+              </div>
+              <div className="trust-badge">
+                <span className="badge-icon">↩️</span>
+                <span>RETURNS</span>
+              </div>
+            </div>
           </div>
-          <div className="summary-row total">
-            <span>Total:</span>
-            <span>${cart.totalAmount.toFixed(2)}</span>
-          </div>
-          <button className="checkout-btn" onClick={handleCheckout}>
-            Proceed to Checkout
-          </button>
         </div>
       </div>
-    </div>
+    </UserLayout>
   );
 }
-

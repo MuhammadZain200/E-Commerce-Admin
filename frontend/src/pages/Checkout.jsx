@@ -5,13 +5,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 import { getCart } from '../api/cart';
 import { checkoutFromCart } from '../api/orders';
-import UserNavbar from '../components/UserNavbar';
+import UserLayout from '../components/UserLayout';
 import './Checkout.css';
 
 export default function Checkout() {
   const { user } = useAuth();
+  const { refreshCart } = useCart();
   const navigate = useNavigate();
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -29,7 +31,7 @@ export default function Checkout() {
       if (response.success) {
         setCart(response.data);
         if (!response.data.items || response.data.items.length === 0) {
-          navigate('/cart');
+          navigate('/user/cart');
         }
       }
     } catch (err) {
@@ -48,8 +50,9 @@ export default function Checkout() {
       setError(null);
       const response = await checkoutFromCart();
       if (response.success) {
+        refreshCart(); // Clear cart count
         alert('Order placed successfully!');
-        navigate('/orders');
+        navigate('/user/orders');
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to place order');
@@ -60,10 +63,9 @@ export default function Checkout() {
 
   if (loading) {
     return (
-      <div className="checkout-page">
-        <UserNavbar />
+      <UserLayout>
         <div className="loading-state">Loading...</div>
-      </div>
+      </UserLayout>
     );
   }
 
@@ -72,9 +74,9 @@ export default function Checkout() {
   }
 
   return (
-    <div className="checkout-page">
-      <UserNavbar />
-      <h1>✅ Checkout</h1>
+    <UserLayout>
+      <div className="checkout-page">
+        <h1>✅ Checkout</h1>
 
       {error && <div className="error-message">{error}</div>}
 
@@ -107,14 +109,15 @@ export default function Checkout() {
           </button>
           <button
             className="cancel-btn"
-            onClick={() => navigate('/cart')}
+            onClick={() => navigate('/user/cart')}
             disabled={processing}
           >
             Back to Cart
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </UserLayout>
   );
 }
 

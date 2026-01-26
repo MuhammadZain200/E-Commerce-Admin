@@ -5,6 +5,7 @@
 
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
+const Settings = require('../models/Settings');
 
 // ============================================
 // GET /api/cart
@@ -58,11 +59,20 @@ exports.getCart = async (req, res) => {
     }));
     await cart.save();
 
+    // Get tax rate from settings (for display purposes)
+    const settings = await Settings.getSettings();
+    const taxRate = settings.taxRate || 0;
+    const taxAmount = (totalAmount * taxRate) / 100;
+    const totalWithTax = totalAmount + taxAmount;
+
     res.json({
       success: true,
       data: {
         items: validItems,
         totalAmount: Math.round(totalAmount * 100) / 100, // Round to 2 decimals
+        taxRate: taxRate,
+        taxAmount: Math.round(taxAmount * 100) / 100,
+        totalWithTax: Math.round(totalWithTax * 100) / 100,
         itemCount: validItems.length,
       },
     });

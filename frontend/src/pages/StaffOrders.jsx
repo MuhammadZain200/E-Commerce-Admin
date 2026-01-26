@@ -19,6 +19,9 @@ export default function StaffOrders() {
 
   useEffect(() => {
     loadOrders();
+    // Refresh orders every 5 seconds for real-time updates
+    const interval = setInterval(loadOrders, 5000);
+    return () => clearInterval(interval);
   }, [viewMode]);
 
   const loadOrders = async () => {
@@ -29,9 +32,11 @@ export default function StaffOrders() {
         viewMode === 'assigned'
           ? await getAssignedOrders()
           : await getAllOrders();
-      if (response.success) {
-        setOrders(response.data || []);
-      }
+      // Handle different response formats
+      const ordersData = response.success
+        ? (response.data || [])
+        : (Array.isArray(response.data) ? response.data : []);
+      setOrders(Array.isArray(ordersData) ? ordersData : []);
     } catch (err) {
       console.error('Failed to load orders:', err);
       setError('Failed to load orders. Please refresh the page.');

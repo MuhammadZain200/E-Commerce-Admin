@@ -15,7 +15,7 @@ const generateToken = (user) => {
 // 1️⃣ Register Controller
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role = 'staff' } = req.body;
+    const { name, email, password, role = 'user' } = req.body;
 
     // Validate input
     if (!name || !email || !password) {

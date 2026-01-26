@@ -24,6 +24,9 @@ export default function Orders() {
 
   useEffect(() => {
     loadOrders();
+    // Refresh orders every 5 seconds for real-time updates
+    const interval = setInterval(loadOrders, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadOrders = async () => {
@@ -31,10 +34,13 @@ export default function Orders() {
       setLoading(true);
       setError(null);
       const res = await fetchOrders();
-      setOrders(res.data);
+      // Handle response format: { success: true, data: [...] } or direct array
+      const ordersData = res.data?.data || (Array.isArray(res.data) ? res.data : []);
+      setOrders(Array.isArray(ordersData) ? ordersData : []);
     } catch (err) {
       console.error('Failed to fetch orders:', err);
       setError('Failed to load orders. Please refresh the page.');
+      setOrders([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
