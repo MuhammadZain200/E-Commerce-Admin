@@ -15,10 +15,12 @@ import StaffStock from './pages/StaffStock';
 import StaffOrders from './pages/StaffOrders';
 import RoleProtectedRoute from './components/RoleProtectedRoute';
 import ProtectedRoute from './components/ProtectedRoute';
+import NotificationContainer from './components/Notification';
 
 function App() {
   return (
     <BrowserRouter>
+      <NotificationContainer />
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<Login />} />

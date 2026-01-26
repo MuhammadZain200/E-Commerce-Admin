@@ -37,14 +37,6 @@ export default function UserSidebar() {
           to="/user/products"
           className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
         >
-          <span className="nav-icon">📊</span>
-          <span className="nav-text">Dashboard</span>
-        </NavLink>
-
-        <NavLink
-          to="/user/products"
-          className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-        >
           <span className="nav-icon">🛍️</span>
           <span className="nav-text">Browse Products</span>
         </NavLink>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { fetchProducts, deleteProduct } from '../api/products';
 import { useAuth } from '../context/AuthContext';
+import { useNotification } from '../context/NotificationContext';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import ProductModal from '../components/ProductModal'; // For editing products
@@ -9,6 +10,7 @@ import './Products.css';
 import './AdminDashboard.css'; // Reuse dashboard styles
 
 export default function Products() {
+  const { success, error: showError } = useNotification();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -46,14 +48,13 @@ export default function Products() {
 
   // Delete product
   const handleDelete = async (id, productName) => {
-    if (window.confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone.`)) {
-      try {
-        await deleteProduct(id);
-        loadProducts();
-      } catch (err) {
-        console.error('Failed to delete product:', err);
-        alert(err.response?.data?.message || 'Failed to delete product. Please try again.');
-      }
+    try {
+      await deleteProduct(id);
+      loadProducts();
+      success(`Product "${productName}" deleted successfully`);
+    } catch (err) {
+      console.error('Failed to delete product:', err);
+      showError(err.response?.data?.message || 'Failed to delete product. Please try again.');
     }
   };
 

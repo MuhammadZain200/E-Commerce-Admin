@@ -6,11 +6,13 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import { useAuth } from '../context/AuthContext';
+import { useNotification } from '../context/NotificationContext';
 import { getProductsWithStock, updateProductStock } from '../api/staff';
 import './StaffStock.css';
 
 export default function StaffStock() {
   const { user } = useAuth();
+  const { success, error: showError } = useNotification();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -48,9 +50,9 @@ export default function StaffStock() {
       await updateProductStock(productId, newStock);
       await loadProducts(); // Reload products
       setEditStock({ ...editStock, [productId]: false });
-      alert('Stock updated successfully!');
+      success('Stock updated successfully!');
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to update stock');
+      showError(err.response?.data?.message || 'Failed to update stock');
     } finally {
       setUpdating({ ...updating, [productId]: false });
     }

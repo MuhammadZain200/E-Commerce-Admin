@@ -6,19 +6,24 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useNotification } from '../context/NotificationContext';
 import { getCart } from '../api/cart';
 import { checkoutFromCart } from '../api/orders';
 import UserLayout from '../components/UserLayout';
+import ConfirmationModal from '../components/ConfirmationModal';
 import './Checkout.css';
 
 export default function Checkout() {
   const { user } = useAuth();
   const { refreshCart } = useCart();
+  const { success, error: showError } = useNotification();
   const navigate = useNavigate();
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [orderPlaced, setOrderPlaced] = useState(false);
 
   useEffect(() => {
     loadCart();
@@ -42,23 +47,41 @@ export default function Checkout() {
     }
   };
 
-  const handlePlaceOrder = async () => {
-    if (!window.confirm('Place this order?')) return;
+  const handlePlaceOrderClick = () => {
+    // Show confirmation modal
+    setShowConfirmModal(true);
+  };
 
+  const handleConfirmOrder = async () => {
+    // Close modal and proceed with order
+    setShowConfirmModal(false);
+    
     try {
       setProcessing(true);
       setError(null);
       const response = await checkoutFromCart();
       if (response.success) {
-        refreshCart(); // Clear cart count
-        alert('Order placed successfully!');
-        navigate('/user/orders');
+        // Immediately clear the cart state to show empty checkout
+        setCart(null);
+        setOrderPlaced(true);
+        refreshCart(); // Clear cart count in context
+        success('Order placed successfully! Redirecting to your orders...');
+        // Redirect immediately after showing success
+        setTimeout(() => {
+          navigate('/user/orders');
+        }, 2000);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to place order');
-    } finally {
+      const errorMsg = err.response?.data?.message || 'Failed to place order';
+      setError(errorMsg);
+      showError(errorMsg);
       setProcessing(false);
     }
+  };
+
+  const handleCancelOrder = () => {
+    // Close modal and stay on checkout page
+    setShowConfirmModal(false);
   };
 
   if (loading) {
@@ -69,6 +92,23 @@ export default function Checkout() {
     );
   }
 
+  // Show success state if order was placed
+  if (orderPlaced) {
+    return (
+      <UserLayout>
+        <div className="checkout-page">
+          <div className="order-success-state">
+            <div className="success-icon">✅</div>
+            <h2>Order Placed Successfully!</h2>
+            <p>Your order has been confirmed and is being processed.</p>
+            <p className="redirect-message">Redirecting to your orders...</p>
+          </div>
+        </div>
+      </UserLayout>
+    );
+  }
+
+  // Redirect to cart if no items
   if (!cart || !cart.items || cart.items.length === 0) {
     return null; // Will redirect
   }
@@ -102,7 +142,7 @@ export default function Checkout() {
         <div className="checkout-actions">
           <button
             className="place-order-btn"
-            onClick={handlePlaceOrder}
+            onClick={handlePlaceOrderClick}
             disabled={processing}
           >
             {processing ? 'Processing...' : 'Place Order'}
@@ -116,6 +156,17 @@ export default function Checkout() {
           </button>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showConfirmModal}
+        onClose={handleCancelOrder}
+        onConfirm={handleConfirmOrder}
+        title="Confirm Order"
+        message="Are you sure you want to place this order? This action cannot be undone."
+        confirmText="Yes, Place Order"
+        cancelText="No, Cancel"
+      />
       </div>
     </UserLayout>
   );

@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useNotification } from '../context/NotificationContext';
 import { getProducts, getCategories } from '../api/userProducts';
 import { addToCart } from '../api/cart';
 import UserLayout from '../components/UserLayout';
@@ -15,6 +16,7 @@ import './UserProducts.css';
 export default function UserProducts() {
   const { user } = useAuth();
   const { refreshCart } = useCart();
+  const { success, error: showError } = useNotification();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
@@ -92,16 +94,9 @@ export default function UserProducts() {
       await addToCart(productId, 1);
       // Refresh cart count
       refreshCart();
-      // Show success message
-      const successMsg = document.createElement('div');
-      successMsg.className = 'cart-success-message';
-      successMsg.textContent = `${productName} added to cart!`;
-      document.body.appendChild(successMsg);
-      setTimeout(() => {
-        successMsg.remove();
-      }, 2000);
+      success(`${productName} added to cart!`);
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to add to cart');
+      showError(err.response?.data?.message || 'Failed to add to cart');
     } finally {
       setAddingToCart({ ...addingToCart, [productId]: false });
     }

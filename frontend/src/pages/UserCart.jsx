@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useNotification } from '../context/NotificationContext';
 import { getCart, updateCartItem, removeFromCart, clearCart } from '../api/cart';
 import UserLayout from '../components/UserLayout';
 import './UserCart.css';
@@ -13,6 +14,7 @@ import './UserCart.css';
 export default function UserCart() {
   const { user } = useAuth();
   const { refreshCart } = useCart();
+  const { success, error: showError, info } = useNotification();
   const navigate = useNavigate();
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -48,40 +50,39 @@ export default function UserCart() {
       await updateCartItem(productId, newQuantity);
       await loadCart();
       refreshCart(); // Update global cart count
+      success('Quantity updated successfully');
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to update quantity');
+      showError(err.response?.data?.message || 'Failed to update quantity');
     } finally {
       setUpdating({ ...updating, [productId]: false });
     }
   };
 
   const handleRemoveItem = async (productId) => {
-    if (!window.confirm('Remove this item from cart?')) return;
-
     try {
       await removeFromCart(productId);
       await loadCart();
       refreshCart(); // Update global cart count
+      success('Item removed from cart');
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to remove item');
+      showError(err.response?.data?.message || 'Failed to remove item');
     }
   };
 
   const handleClearCart = async () => {
-    if (!window.confirm('Clear entire cart?')) return;
-
     try {
       await clearCart();
       await loadCart();
       refreshCart(); // Update global cart count
+      success('Cart cleared successfully');
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to clear cart');
+      showError(err.response?.data?.message || 'Failed to clear cart');
     }
   };
 
   const handleCheckout = () => {
     if (!cart || !cart.items || cart.items.length === 0) {
-      alert('Cart is empty');
+      showError('Cart is empty');
       return;
     }
     navigate('/checkout');
@@ -89,7 +90,7 @@ export default function UserCart() {
 
   const handleApplyPromo = () => {
     // Placeholder for promo code functionality
-    alert('Promo code functionality coming soon!');
+    info('Promo code functionality coming soon!');
   };
 
   const calculateTax = () => {

@@ -6,11 +6,13 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import { useAuth } from '../context/AuthContext';
+import { useNotification } from '../context/NotificationContext';
 import { getAssignedOrders, getAllOrders, updateOrderStatus } from '../api/staff';
 import './StaffOrders.css';
 
 export default function StaffOrders() {
   const { user } = useAuth();
+  const { success, error: showError } = useNotification();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -50,9 +52,9 @@ export default function StaffOrders() {
       setUpdating({ ...updating, [orderId]: true });
       await updateOrderStatus(orderId, newStatus);
       await loadOrders(); // Reload orders
-      alert('Order status updated successfully!');
+      success('Order status updated successfully!');
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to update order status');
+      showError(err.response?.data?.message || 'Failed to update order status');
     } finally {
       setUpdating({ ...updating, [orderId]: false });
     }

@@ -4,12 +4,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { fetchOrders } from '../api/orders';
+import { useNotification } from '../context/NotificationContext';
+import { fetchOrders, fetchOrderById } from '../api/orders';
 import UserLayout from '../components/UserLayout';
+import OrderDetailsModal from '../components/OrderDetailsModal';
 import './UserOrders.css';
 
 export default function UserOrders() {
   const { user } = useAuth();
+  const { info } = useNotification();
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,6 +21,9 @@ export default function UserOrders() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 3;
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showOrderDetails, setShowOrderDetails] = useState(false);
+  const [loadingOrderDetails, setLoadingOrderDetails] = useState(false);
 
   useEffect(() => {
     loadOrders();
@@ -123,19 +129,38 @@ export default function UserOrders() {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
 
-  const handleViewDetails = (orderId) => {
-    // Navigate to order details page or show modal
-    alert(`View details for order ${orderId}`);
+  const handleViewDetails = async (orderId) => {
+    try {
+      setLoadingOrderDetails(true);
+      setShowOrderDetails(true);
+      const response = await fetchOrderById(orderId);
+      if (response.data?.success && response.data.data) {
+        setSelectedOrder(response.data.data);
+      } else if (response.data) {
+        setSelectedOrder(response.data);
+      }
+    } catch (err) {
+      console.error('Failed to load order details:', err);
+      info('Failed to load order details. Please try again.');
+      setShowOrderDetails(false);
+    } finally {
+      setLoadingOrderDetails(false);
+    }
+  };
+
+  const handleCloseOrderDetails = () => {
+    setShowOrderDetails(false);
+    setSelectedOrder(null);
   };
 
   const handleTrackOrder = (orderId) => {
     // Navigate to tracking page
-    alert(`Track order ${orderId}`);
+    info(`Track order ${orderId}`);
   };
 
   const handleReorder = (order) => {
     // Add all items from order to cart
-    alert('Reorder functionality coming soon!');
+    info('Reorder functionality coming soon!');
   };
 
   if (loading) {
@@ -326,6 +351,14 @@ export default function UserOrders() {
             )}
           </>
         )}
+
+        {/* Order Details Modal */}
+        <OrderDetailsModal
+          isOpen={showOrderDetails}
+          onClose={handleCloseOrderDetails}
+          order={selectedOrder}
+          loading={loadingOrderDetails}
+        />
       </div>
     </UserLayout>
   );

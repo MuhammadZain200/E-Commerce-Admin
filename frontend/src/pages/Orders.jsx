@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { fetchOrders, updateOrderStatus } from '../api/orders';
 import { useAuth } from '../context/AuthContext';
+import { useNotification } from '../context/NotificationContext';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import './Orders.css';
@@ -17,6 +18,7 @@ const ORDER_STATUSES = {
 
 export default function Orders() {
   const { user } = useAuth();
+  const { success, error: showError } = useNotification();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -51,9 +53,10 @@ export default function Orders() {
       setUpdatingStatus({ ...updatingStatus, [orderId]: true });
       await updateOrderStatus(orderId, newStatus);
       await loadOrders(); // Reload orders to get updated data
+      success('Order status updated successfully');
     } catch (err) {
       console.error('Failed to update order status:', err);
-      alert(err.response?.data?.message || 'Failed to update order status');
+      showError(err.response?.data?.message || 'Failed to update order status');
     } finally {
       setUpdatingStatus({ ...updatingStatus, [orderId]: false });
     }
