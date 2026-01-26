@@ -281,14 +281,6 @@ export default function UserOrders() {
                           🚚 Track Order
                         </button>
                       )}
-                      {isProcessing && (
-                        <button
-                          className="action-btn primary modify-order"
-                          onClick={() => handleViewDetails(order._id)}
-                        >
-                          ✏️ Modify
-                        </button>
-                      )}
                       {isDelivered && (
                         <button
                           className="action-btn primary reorder"
