@@ -19,7 +19,7 @@ export default function Login() {
       // Redirect logged-in users to their role dashboard
       if (user.role === 'admin') navigate('/dashboard/admin');
       else if (user.role === 'staff') navigate('/dashboard/staff');
-      else navigate('/dashboard/user');
+      else navigate('/user/home');
     }
   }, [user, navigate]);
 
@@ -47,7 +47,7 @@ export default function Login() {
       // Redirect based on role
       if (loggedInUser.role === 'admin') navigate('/dashboard/admin');
       else if (loggedInUser.role === 'staff') navigate('/dashboard/staff');
-      else navigate('/dashboard/user');
+      else navigate('/user/home');
     } catch (err) {
       const message =
         err.response?.data?.message ||
