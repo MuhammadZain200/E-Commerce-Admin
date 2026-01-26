@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const Settings = require('../models/Settings');
+const Cart = require('../models/Cart');
 
 // Valid status transitions (sequential flow)
 const STATUS_TRANSITIONS = {
@@ -248,12 +249,20 @@ const getOrders = async (req, res) => {
     const orders = await Order.find(query)
       .sort({ createdAt: -1 })
       .populate('items.productId', 'name price stock')
-      .populate('createdBy', 'name email');
+      .populate('createdBy', 'name email')
+      .populate('assignedStaffId', 'name email');
 
-    res.json(orders);
+    res.json({
+      success: true,
+      count: orders.length,
+      data: orders,
+    });
   } catch (error) {
     console.error('Get orders error:', error);
-    res.status(500).json({ message: 'Failed to fetch orders' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to fetch orders' 
+    });
   }
 };
 
@@ -266,26 +275,128 @@ const getOrderById = async (req, res) => {
 
     const order = await Order.findById(id)
       .populate('items.productId', 'name price stock')
-      .populate('createdBy', 'name email');
+      .populate('createdBy', 'name email')
+      .populate('assignedStaffId', 'name email');
 
     if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Order not found' 
+      });
     }
 
     // Users can only view their own orders (unless admin/staff)
     if (userRole !== 'admin' && userRole !== 'staff' && order.createdBy._id.toString() !== userId) {
-      return res.status(403).json({ message: 'Access denied' });
+      return res.status(403).json({ 
+        success: false,
+        message: 'Access denied' 
+      });
     }
 
-    res.json(order);
+    res.json({
+      success: true,
+      data: order,
+    });
   } catch (error) {
     console.error('Get order by ID error:', error);
     res.status(500).json({ message: 'Failed to fetch order' });
   }
 };
 
+// ============================================
+// Checkout from cart (User)
+// ============================================
+// Creates order from cart and clears cart
+const checkoutFromCart = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get user's cart
+    const cart = await Cart.findOne({ userId }).populate('items.productId');
+    
+    if (!cart || !cart.items || cart.items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cart is empty',
+      });
+    }
+
+    // Get settings for tax calculation
+    const settings = await Settings.getSettings();
+
+    // Validate items and check stock
+    let subtotal = 0;
+    const validatedItems = [];
+
+    for (const cartItem of cart.items) {
+      const product = cartItem.productId;
+
+      if (!product || !product.isActive) {
+        return res.status(400).json({
+          success: false,
+          message: `Product ${product?.name || 'Unknown'} is no longer available`,
+        });
+      }
+
+      if (product.stock < cartItem.quantity) {
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${cartItem.quantity}`,
+        });
+      }
+
+      const itemPrice = product.price;
+      const itemTotal = itemPrice * cartItem.quantity;
+      subtotal += itemTotal;
+
+      validatedItems.push({
+        productId: product._id,
+        quantity: cartItem.quantity,
+        price: itemPrice,
+      });
+    }
+
+    // Calculate tax and total
+    const taxAmount = (subtotal * settings.taxRate) / 100;
+    const totalAmount = subtotal + taxAmount;
+
+    // Create order
+    const order = new Order({
+      items: validatedItems,
+      totalAmount: Math.round(totalAmount * 100) / 100,
+      status: 'created',
+      paymentStatus: 'pending',
+      createdBy: userId,
+    });
+
+    await order.save();
+
+    // Clear cart after successful order creation
+    cart.items = [];
+    await cart.save();
+
+    // Populate for response
+    await order.populate('items.productId', 'name price stock');
+    await order.populate('createdBy', 'name email');
+
+    res.status(201).json({
+      success: true,
+      message: 'Order created successfully',
+      data: order,
+    });
+  } catch (error) {
+    console.error('Checkout from cart error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create order from cart',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createOrder,
+  checkoutFromCart,
   updateOrderStatus,
   getOrders,
   getOrderById,

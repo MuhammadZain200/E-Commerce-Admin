@@ -52,6 +52,12 @@ const orderSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    assignedStaffId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+      // Staff member assigned to handle this order (packing, shipping, etc.)
+    },
   },
   { timestamps: true }
 );
@@ -59,6 +65,7 @@ const orderSchema = new mongoose.Schema(
 // Index for faster queries
 orderSchema.index({ createdBy: 1, createdAt: -1 });
 orderSchema.index({ status: 1 });
+orderSchema.index({ assignedStaffId: 1 }); // For staff to find their assigned orders
 
 module.exports = mongoose.model('Order', orderSchema);
 

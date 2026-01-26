@@ -1,14 +1,18 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import UserDashboard from './pages/UserDashboard';
-import StaffDashboard from './pages/StaffDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import Products from './pages/Products';
 import Orders from './pages/Orders';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import UserManagement from './pages/UserManagement';
+import UserProducts from './pages/UserProducts';
+import UserCart from './pages/UserCart';
+import Checkout from './pages/Checkout';
+import UserOrders from './pages/UserOrders';
+import StaffStock from './pages/StaffStock';
+import StaffOrders from './pages/StaffOrders';
 import RoleProtectedRoute from './components/RoleProtectedRoute';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -25,7 +29,7 @@ function App() {
           path="/dashboard/user"
           element={
             <RoleProtectedRoute allowedRoles={['user']}>
-              <UserDashboard />
+              <UserProducts />
             </RoleProtectedRoute>
           }
         />
@@ -34,7 +38,7 @@ function App() {
           path="/dashboard/staff"
           element={
             <RoleProtectedRoute allowedRoles={['staff']}>
-              <StaffDashboard />
+              <StaffOrders />
             </RoleProtectedRoute>
           }
         />
@@ -94,6 +98,58 @@ function App() {
           element={
             <RoleProtectedRoute allowedRoles={['admin']}>
               <UserManagement />
+            </RoleProtectedRoute>
+          }
+        />
+
+        {/* User routes - user only */}
+        <Route
+          path="/user/products"
+          element={
+            <RoleProtectedRoute allowedRoles={['user']}>
+              <UserProducts />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="/user/cart"
+          element={
+            <RoleProtectedRoute allowedRoles={['user']}>
+              <UserCart />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="/checkout"
+          element={
+            <RoleProtectedRoute allowedRoles={['user']}>
+              <Checkout />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="/user/orders"
+          element={
+            <RoleProtectedRoute allowedRoles={['user']}>
+              <UserOrders />
+            </RoleProtectedRoute>
+          }
+        />
+
+        {/* Staff routes - staff only */}
+        <Route
+          path="/staff/stock"
+          element={
+            <RoleProtectedRoute allowedRoles={['staff', 'admin']}>
+              <StaffStock />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="/staff/orders"
+          element={
+            <RoleProtectedRoute allowedRoles={['staff', 'admin']}>
+              <StaffOrders />
             </RoleProtectedRoute>
           }
         />

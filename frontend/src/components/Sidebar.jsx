@@ -8,13 +8,32 @@ export default function Sidebar({ user }) {
     setActiveMenu(activeMenu === menu ? null : menu);
   };
 
-  const menuItems = [
-    { name: 'DASHBOARD', icon: '📊', path: `/dashboard/${user.role}` },
-    { name: 'PRODUCTS', icon: '📦', path: '/products' },
-    { name: 'ORDERS', icon: '🛒', path: '/orders' },
-    { name: 'ANALYTICS', icon: '📈', path: user.role === 'admin' ? '/analytics' : null, disabled: user.role !== 'admin' },
-    { name: 'SETTINGS', icon: '⚙️', submenu: true },
-  ];
+  // Role-based menu items
+  const getMenuItems = () => {
+    if (user.role === 'user') {
+      return [
+        { name: 'PRODUCTS', icon: '🛍️', path: '/user/products' },
+        { name: 'CART', icon: '🛒', path: '/user/cart' },
+        { name: 'MY ORDERS', icon: '📦', path: '/user/orders' },
+      ];
+    } else if (user.role === 'staff') {
+      return [
+        { name: 'ORDERS', icon: '📋', path: '/staff/orders' },
+        { name: 'STOCK', icon: '📦', path: '/staff/stock' },
+      ];
+    } else if (user.role === 'admin') {
+      return [
+        { name: 'DASHBOARD', icon: '📊', path: '/dashboard/admin' },
+        { name: 'PRODUCTS', icon: '📦', path: '/products' },
+        { name: 'ORDERS', icon: '🛒', path: '/orders' },
+        { name: 'ANALYTICS', icon: '📈', path: '/analytics' },
+        { name: 'SETTINGS', icon: '⚙️', submenu: true },
+      ];
+    }
+    return [];
+  };
+
+  const menuItems = getMenuItems();
 
   return (
     <div className="sidebar">

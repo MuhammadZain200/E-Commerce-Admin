@@ -24,17 +24,24 @@ app.use(express.json()); // parse JSON bodies
 app.use(cors({ origin: 'http://localhost:3000' })); // allow frontend
 
 // Import routes
-const adminRoutes = require('./routes/adminRoutes'); // Product routes
+const adminRoutes = require('./routes/adminRoutes'); // Admin product routes
 const authRoutes = require('./routes/authRoutes');   // Auth routes (login, register, etc)
 const orderRoutes = require('./routes/orderRoutes');  // Order routes
 const settingsRoutes = require('./routes/settingsRoutes'); // Settings & User management routes
+const categoryRoutes = require('./routes/categoryRoutes'); // Category & Subcategory routes (admin)
+const userProductRoutes = require('./routes/userProductRoutes'); // User product browsing routes
+const cartRoutes = require('./routes/cartRoutes'); // Cart routes (user)
+const staffRoutes = require('./routes/staffRoutes'); // Staff routes
 
 // Mount routes
-// IMPORTANT: Mount settingsRoutes BEFORE adminRoutes to avoid route conflicts
-// Specific routes (/settings, /users) must come before parameterized routes (/:id)
+// IMPORTANT: Mount specific routes BEFORE parameterized routes to avoid route conflicts
 app.use('/api/admin', settingsRoutes); // settings & user management routes (specific paths first)
-app.use('/api/admin', adminRoutes); // all product routes (parameterized routes)
+app.use('/api/admin', categoryRoutes); // category routes (specific paths)
+app.use('/api/admin', adminRoutes); // admin product routes (parameterized routes)
 app.use('/api/auth', authRoutes);   // authentication routes
+app.use('/api/products', userProductRoutes); // user product browsing (public/user)
+app.use('/api/cart', cartRoutes); // cart routes (user only)
+app.use('/api/staff', staffRoutes); // staff routes
 app.use('/api/orders', orderRoutes); // order routes
 
 // MongoDB connection

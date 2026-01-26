@@ -4,13 +4,17 @@ const { protect } = require('../middleware/authMiddleware');
 const roleMiddleware = require('../middleware/roleMiddleware');
 const {
   createOrder,
+  checkoutFromCart,
   updateOrderStatus,
   getOrders,
   getOrderById,
 } = require('../controllers/orderController');
 
-// Create order (any authenticated user)
+// Create order from items (any authenticated user)
 router.post('/', protect, createOrder);
+
+// Checkout from cart (user only)
+router.post('/checkout', protect, roleMiddleware('user'), checkoutFromCart);
 
 // Get all orders (admin/staff see all, users see their own)
 router.get('/', protect, getOrders);
