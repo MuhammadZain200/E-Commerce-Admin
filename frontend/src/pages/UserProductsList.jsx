@@ -39,10 +39,7 @@ export default function UserProductsList() {
 
   useEffect(() => {
     loadProducts();
-    const interval = setInterval(() => {
-      loadProducts();
-    }, 5000);
-    return () => clearInterval(interval);
+    // Removed automatic polling - products will only load when filters change
   }, [filters]);
 
   const loadCategories = async () => {

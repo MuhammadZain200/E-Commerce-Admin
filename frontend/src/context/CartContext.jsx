@@ -38,11 +38,9 @@ export const CartProvider = ({ children }) => {
 
   useEffect(() => {
     // Only load cart if user has 'user' role
+    // Load once on mount and when user changes - no polling
     if (user && user.role === 'user') {
       loadCart();
-      // Refresh cart every 5 seconds for user role only
-      const interval = setInterval(loadCart, 5000);
-      return () => clearInterval(interval);
     } else {
       // Clear cart for non-user roles (admin, staff, or logged out)
       setCartCount(0);

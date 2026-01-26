@@ -27,9 +27,7 @@ export default function UserOrders() {
 
   useEffect(() => {
     loadOrders();
-    // Refresh orders every 5 seconds for real-time updates
-    const interval = setInterval(loadOrders, 5000);
-    return () => clearInterval(interval);
+    // Removed automatic polling - orders will only load on mount or manual refresh
   }, []);
 
   useEffect(() => {
