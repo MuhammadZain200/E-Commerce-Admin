@@ -6,11 +6,13 @@ import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useSettings } from '../context/SettingsContext';
 import './UserSidebar.css';
 
 export default function UserSidebar() {
   const { user, logout } = useAuth();
   const { cartCount } = useCart();
+  const { settings } = useSettings();
   const navigate = useNavigate();
   const [activeMenu, setActiveMenu] = useState(null);
 
@@ -28,7 +30,7 @@ export default function UserSidebar() {
       <div className="sidebar-brand">
         <div className="brand-icon">🛍️</div>
         <div className="brand-text">
-          <div className="brand-name">E-COMMERCE</div>
+          <div className="brand-name">{settings.storeName || 'E-COMMERCE'}</div>
         </div>
       </div>
 

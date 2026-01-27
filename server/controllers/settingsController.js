@@ -6,6 +6,30 @@
 const Settings = require('../models/Settings');
 
 // ============================================
+// GET /api/settings/public
+// ============================================
+// Returns public settings (store name) - no auth required
+exports.getPublicSettings = async (req, res) => {
+  try {
+    const settings = await Settings.getSettings();
+    
+    res.json({
+      success: true,
+      data: {
+        storeName: settings.storeName || 'E-COMMERCE',
+      },
+    });
+  } catch (error) {
+    console.error('Get public settings error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch public settings',
+      error: error.message,
+    });
+  }
+};
+
+// ============================================
 // GET /api/admin/settings
 // ============================================
 // Returns current settings (admin only)

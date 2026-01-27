@@ -10,7 +10,16 @@ import api from './axios';
 // ============================================
 
 /**
- * Get current settings
+ * Get public settings (store name) - no auth required
+ * GET /api/settings/public
+ */
+export const getPublicSettings = async () => {
+  const response = await api.get('/api/settings/public');
+  return response.data;
+};
+
+/**
+ * Get current settings (admin only)
  * GET /api/admin/settings
  */
 export const getSettings = async () => {

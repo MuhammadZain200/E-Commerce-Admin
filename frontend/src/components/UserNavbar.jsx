@@ -5,10 +5,12 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useSettings } from '../context/SettingsContext';
 import './UserNavbar.css';
 
 export default function UserNavbar() {
   const { user, logout } = useAuth();
+  const { settings } = useSettings();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -20,7 +22,7 @@ export default function UserNavbar() {
     <nav className="user-navbar">
       <div className="navbar-brand">
         <span className="brand-icon">🛍️</span>
-        <span className="brand-text">E-Commerce Store</span>
+        <span className="brand-text">{settings.storeName || 'E-COMMERCE'} Store</span>
       </div>
 
       <div className="navbar-links">

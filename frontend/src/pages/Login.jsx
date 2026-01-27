@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useSettings } from '../context/SettingsContext';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import './Login.css';
 
 export default function Login() {
   const { login, user } = useAuth();
+  const { settings } = useSettings();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -64,7 +66,7 @@ export default function Login() {
         <div className="auth-header">
           <div className="auth-logo">
             <div className="logo-square">EA</div>
-            <div className="logo-text">E-COMMERCE ADMIN</div>
+            <div className="logo-text">{settings.storeName || 'E-COMMERCE'} ADMIN</div>
           </div>
           <h1>Welcome Back</h1>
           <p>Sign in to your account</p>

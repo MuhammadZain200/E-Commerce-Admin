@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useSettings } from '../context/SettingsContext';
 import axios from '../api/axios';
 import './Register.css';
 import './Login.css'; // Reuse login styles
 
 const Register = () => {
+  const { settings } = useSettings();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -48,7 +50,7 @@ const Register = () => {
         <div className="auth-header">
           <div className="auth-logo">
             <div className="logo-square">EA</div>
-            <div className="logo-text">E-COMMERCE ADMIN</div>
+            <div className="logo-text">{settings.storeName || 'E-COMMERCE'} ADMIN</div>
           </div>
           <h1>Create Account</h1>
           <p>Sign up to get started</p>

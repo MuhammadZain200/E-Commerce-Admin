@@ -9,11 +9,13 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import { useAuth } from '../context/AuthContext';
+import { useSettings } from '../context/SettingsContext';
 import { getSettings, updateSettings } from '../api/settings';
 import './Settings.css';
 
 export default function Settings() {
   const { user } = useAuth();
+  const { refreshSettings } = useSettings();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -75,6 +77,8 @@ export default function Settings() {
       const response = await updateSettings(settings);
       if (response.success) {
         setSuccess('Settings saved successfully!');
+        // Refresh settings context to update store name everywhere
+        refreshSettings();
         // Clear success message after 3 seconds
         setTimeout(() => setSuccess(null), 3000);
       }

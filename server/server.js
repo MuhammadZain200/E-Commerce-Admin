@@ -35,6 +35,12 @@ const staffRoutes = require('./routes/staffRoutes'); // Staff routes
 
 // Mount routes
 // IMPORTANT: Mount specific routes BEFORE parameterized routes to avoid route conflicts
+// Public settings route (no auth) - must be mounted separately
+const { getPublicSettings } = require('./controllers/settingsController');
+const publicSettingsRouter = express.Router();
+publicSettingsRouter.get('/public', getPublicSettings);
+app.use('/api/settings', publicSettingsRouter);
+
 app.use('/api/admin', settingsRoutes); // settings & user management routes (specific paths first)
 app.use('/api/admin', categoryRoutes); // category routes (specific paths)
 app.use('/api/admin', adminRoutes); // admin product routes (parameterized routes)

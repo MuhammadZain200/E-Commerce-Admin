@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { useSettings } from '../context/SettingsContext';
 
 export default function Sidebar({ user }) {
+  const { settings } = useSettings();
   const [activeMenu, setActiveMenu] = useState(null);
 
   const toggleMenu = (menu) => {
@@ -39,7 +41,7 @@ export default function Sidebar({ user }) {
     <div className="sidebar">
       <div className="sidebar-brand">
         <div className="brand-square">EA</div>
-        <div className="brand-text">E-COMMERCE ADMIN</div>
+        <div className="brand-text">{settings.storeName || 'E-COMMERCE'} ADMIN</div>
       </div>
 
       <nav className="sidebar-nav">
