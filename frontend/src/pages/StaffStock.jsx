@@ -59,8 +59,9 @@ export default function StaffStock() {
   };
 
   const getStockStatusClass = (stock) => {
+    // 1-10 is low stock, 0 is out of stock
     if (stock === 0) return 'stock-out';
-    if (stock < 10) return 'stock-low';
+    if (stock >= 1 && stock <= 10) return 'stock-low';
     return 'stock-ok';
   };
 
@@ -150,7 +151,7 @@ export default function StaffStock() {
                         <span className={`stock-badge ${getStockStatusClass(product.stock)}`}>
                           {product.stock === 0
                             ? 'Out of Stock'
-                            : product.stock < 10
+                            : product.stock >= 1 && product.stock <= 10
                             ? 'Low Stock'
                             : 'In Stock'}
                         </span>

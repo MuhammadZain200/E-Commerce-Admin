@@ -110,9 +110,9 @@ export default function UserProductsList() {
   };
 
   const getStockStatus = (stock) => {
-    if (stock === 0) return { text: 'SOLD OUT', class: 'out-of-stock' };
-    if (stock < 10) return { text: `${stock} available`, class: 'low-stock' };
-    return { text: `${stock} available`, class: 'in-stock' };
+    if (stock === 0) return { text: 'OUT OF STOCK', class: 'out-of-stock', label: 'Out of Stock' };
+    if (stock >= 1 && stock <= 10) return { text: `${stock} available`, class: 'low-stock', label: 'Low Stock' };
+    return { text: `${stock} available`, class: 'in-stock', label: 'In Stock' };
   };
 
   const categoryIcons = {
@@ -245,7 +245,13 @@ export default function UserProductsList() {
                     <h3 className="product-name">{product.name}</h3>
                     <div className="product-price">${product.price.toFixed(2)}</div>
                     <div className={`product-stock ${stockStatus.class}`}>
-                      {product.stock === 0 ? 'SOLD OUT' : `Stock: ${stockStatus.text}`}
+                      {product.stock === 0 ? (
+                        <span className="stock-label-out">OUT OF STOCK</span>
+                      ) : stockStatus.label === 'Low Stock' ? (
+                        <span className="stock-label-low">⚠️ LOW STOCK - {stockStatus.text}</span>
+                      ) : (
+                        <span className="stock-label-in">✓ {stockStatus.text}</span>
+                      )}
                     </div>
                     <button
                       className={`add-to-cart-btn ${product.stock === 0 ? 'disabled' : ''}`}

@@ -39,29 +39,56 @@ const isValidTransition = (currentStatus, newStatus, allowStatusSkipping = false
 
 // Create order
 const createOrder = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const { items } = req.body;
     const userId = req.user.id;
 
     if (!items || items.length === 0) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(400).json({ message: 'Order must have at least one item' });
     }
 
     // Get settings to calculate tax
     const settings = await Settings.getSettings();
 
-    // Validate items and check stock availability
-    let subtotal = 0; // Amount before tax
+    // Validate items and check stock availability atomically
+    let subtotal = 0;
     const validatedItems = [];
+    const stockUpdates = [];
 
+    // First pass: validate all items and prepare stock updates
     for (const item of items) {
-      const product = await Product.findById(item.productId);
+      const product = await Product.findById(item.productId).session(session);
       
       if (!product) {
+        await session.abortTransaction();
+        session.endSession();
         return res.status(404).json({ message: `Product ${item.productId} not found` });
       }
 
+      if (!product.isActive) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(400).json({ 
+          message: `Product ${product.name} is not available` 
+        });
+      }
+
+      if (product.stock <= 0) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(400).json({ 
+          message: `Product ${product.name} is out of stock` 
+        });
+      }
+
       if (product.stock < item.quantity) {
+        await session.abortTransaction();
+        session.endSession();
         return res.status(400).json({ 
           message: `Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${item.quantity}` 
         });
@@ -77,22 +104,42 @@ const createOrder = async (req, res) => {
         quantity: item.quantity,
         price: itemPrice,
       });
+
+      // Prepare stock update
+      stockUpdates.push({
+        productId: product._id,
+        quantity: item.quantity,
+        newStock: product.stock - item.quantity,
+      });
     }
 
     // Calculate tax and total amount
     const taxAmount = (subtotal * settings.taxRate) / 100;
     const totalAmount = subtotal + taxAmount;
 
-    // Create order
+    // Create order within transaction
     const order = new Order({
       items: validatedItems,
-      totalAmount: Math.round(totalAmount * 100) / 100, // Round to 2 decimal places
+      totalAmount: Math.round(totalAmount * 100) / 100,
       status: 'created',
       paymentStatus: 'pending',
       createdBy: userId,
     });
 
-    await order.save();
+    await order.save({ session });
+
+    // Atomically decrement stock for all products
+    for (const update of stockUpdates) {
+      await Product.findByIdAndUpdate(
+        update.productId,
+        { $inc: { stock: -update.quantity } },
+        { session, new: true }
+      );
+    }
+
+    // Commit transaction
+    await session.commitTransaction();
+    session.endSession();
     
     // Populate product details for response
     await order.populate('items.productId', 'name price stock');
@@ -100,8 +147,10 @@ const createOrder = async (req, res) => {
 
     res.status(201).json(order);
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     console.error('Create order error:', error);
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ message: error.message || 'Failed to create order' });
   }
 };
 
@@ -308,13 +357,18 @@ const getOrderById = async (req, res) => {
 // ============================================
 // Creates order from cart and clears cart
 const checkoutFromCart = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const userId = req.user.id;
 
-    // Get user's cart
-    const cart = await Cart.findOne({ userId }).populate('items.productId');
+    // Get user's cart within transaction
+    const cart = await Cart.findOne({ userId }).populate('items.productId').session(session);
     
     if (!cart || !cart.items || cart.items.length === 0) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(400).json({
         success: false,
         message: 'Cart is empty',
@@ -324,21 +378,35 @@ const checkoutFromCart = async (req, res) => {
     // Get settings for tax calculation
     const settings = await Settings.getSettings();
 
-    // Validate items and check stock
+    // Validate items and check stock atomically
     let subtotal = 0;
     const validatedItems = [];
+    const stockUpdates = [];
 
     for (const cartItem of cart.items) {
-      const product = cartItem.productId;
+      const product = await Product.findById(cartItem.productId._id).session(session);
 
       if (!product || !product.isActive) {
+        await session.abortTransaction();
+        session.endSession();
         return res.status(400).json({
           success: false,
           message: `Product ${product?.name || 'Unknown'} is no longer available`,
         });
       }
 
+      if (product.stock <= 0) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(400).json({
+          success: false,
+          message: `Product ${product.name} is out of stock`,
+        });
+      }
+
       if (product.stock < cartItem.quantity) {
+        await session.abortTransaction();
+        session.endSession();
         return res.status(400).json({
           success: false,
           message: `Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${cartItem.quantity}`,
@@ -354,13 +422,19 @@ const checkoutFromCart = async (req, res) => {
         quantity: cartItem.quantity,
         price: itemPrice,
       });
+
+      // Prepare stock update
+      stockUpdates.push({
+        productId: product._id,
+        quantity: cartItem.quantity,
+      });
     }
 
     // Calculate tax and total
     const taxAmount = (subtotal * settings.taxRate) / 100;
     const totalAmount = subtotal + taxAmount;
 
-    // Create order
+    // Create order within transaction
     const order = new Order({
       items: validatedItems,
       totalAmount: Math.round(totalAmount * 100) / 100,
@@ -369,11 +443,24 @@ const checkoutFromCart = async (req, res) => {
       createdBy: userId,
     });
 
-    await order.save();
+    await order.save({ session });
+
+    // Atomically decrement stock for all products
+    for (const update of stockUpdates) {
+      await Product.findByIdAndUpdate(
+        update.productId,
+        { $inc: { stock: -update.quantity } },
+        { session, new: true }
+      );
+    }
 
     // Clear cart after successful order creation
     cart.items = [];
-    await cart.save();
+    await cart.save({ session });
+
+    // Commit transaction
+    await session.commitTransaction();
+    session.endSession();
 
     // Populate for response
     await order.populate('items.productId', 'name price stock');
@@ -385,6 +472,8 @@ const checkoutFromCart = async (req, res) => {
       data: order,
     });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     console.error('Checkout from cart error:', error);
     res.status(500).json({
       success: false,

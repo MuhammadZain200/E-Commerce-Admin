@@ -315,6 +315,22 @@
   color: #3b82f6;
 }
 
+.featured-stock-out {
+  font-size: 11px;
+  color: #f44336;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 8px;
+}
+
+.featured-stock-low {
+  font-size: 11px;
+  color: #ff9800;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
 .loading-state,
 .empty-state {
   text-align: center;

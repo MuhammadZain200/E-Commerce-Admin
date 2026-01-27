@@ -304,6 +304,26 @@
   font-weight: 600;
 }
 
+.stock-label-out {
+  color: #f44336;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.stock-label-low {
+  color: #ff9800;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.stock-label-in {
+  color: #4CAF50;
+  font-weight: 500;
+  font-size: 12px;
+}
+
 .add-to-cart-btn {
   width: 100%;
   padding: 12px;

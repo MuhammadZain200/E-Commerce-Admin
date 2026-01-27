@@ -158,7 +158,13 @@ export default function UserCart() {
                 <div className="item-details">
                   <h3 className="item-name">{item.product.name}</h3>
                   <p className="item-specs">
-                    Stock: {item.product.stock} | SKU: {item.productId.slice(-8)}
+                    {item.product.stock === 0 ? (
+                      <span className="stock-warning-out">⚠️ OUT OF STOCK</span>
+                    ) : item.product.stock <= 10 ? (
+                      <span className="stock-warning-low">⚠️ Low Stock: {item.product.stock} available</span>
+                    ) : (
+                      <span>Stock: {item.product.stock} | SKU: {item.productId.slice(-8)}</span>
+                    )}
                   </p>
                   <div className="item-price">${item.product.price.toFixed(2)}</div>
                 </div>

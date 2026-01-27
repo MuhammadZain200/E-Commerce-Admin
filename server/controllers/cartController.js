@@ -126,6 +126,14 @@ exports.addToCart = async (req, res) => {
       });
     }
 
+    // Check if product is out of stock
+    if (product.stock <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Product is out of stock',
+      });
+    }
+
     if (product.stock < quantity) {
       return res.status(400).json({
         success: false,
@@ -226,6 +234,14 @@ exports.updateCartItem = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Product is not available',
+      });
+    }
+
+    // Check if product is out of stock
+    if (product.stock <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Product is out of stock',
       });
     }
 

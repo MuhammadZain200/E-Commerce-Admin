@@ -112,8 +112,8 @@ export default function Products() {
                     <td>{p.name}</td>
                     <td>${parseFloat(p.price || 0).toFixed(2)}</td>
                     <td>
-                      <span className={`stock-badge ${p.stock === 0 ? 'out-of-stock' : p.stock < 10 ? 'low-stock' : 'in-stock'}`}>
-                        {p.stock}
+                      <span className={`stock-badge ${p.stock === 0 ? 'out-of-stock' : p.stock >= 1 && p.stock <= 10 ? 'low-stock' : 'in-stock'}`}>
+                        {p.stock === 0 ? 'OUT OF STOCK' : p.stock >= 1 && p.stock <= 10 ? `LOW STOCK (${p.stock})` : p.stock}
                       </span>
                     </td>
                     <td>

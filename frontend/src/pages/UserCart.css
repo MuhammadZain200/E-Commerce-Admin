@@ -95,6 +95,20 @@
   margin: 0 0 8px 0;
 }
 
+.stock-warning-out {
+  color: #f44336;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stock-warning-low {
+  color: #ff9800;
+  font-weight: 600;
+  font-size: 12px;
+}
+
 .item-price {
   font-size: 1.2rem;
   font-weight: 700;

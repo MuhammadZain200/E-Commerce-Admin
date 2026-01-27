@@ -202,6 +202,12 @@ export default function UserHome() {
                     </div>
                     <h3 className="featured-name">{product.name}</h3>
                     <div className="featured-price">${product.price.toFixed(2)}</div>
+                    {product.stock === 0 && (
+                      <div className="featured-stock-out">OUT OF STOCK</div>
+                    )}
+                    {product.stock > 0 && product.stock <= 10 && (
+                      <div className="featured-stock-low">⚠️ Low Stock ({product.stock})</div>
+                    )}
                   </div>
                 </div>
               ))}
