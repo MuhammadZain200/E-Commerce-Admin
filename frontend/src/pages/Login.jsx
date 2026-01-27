@@ -65,8 +65,7 @@ export default function Login() {
       <div className="auth-card">
         <div className="auth-header">
           <div className="auth-logo">
-            <div className="logo-square">EA</div>
-            <div className="logo-text">{settings.storeName || 'E-COMMERCE'} ADMIN</div>
+            <div className="logo-text">{settings.storeName || 'E-COMMERCE'}</div>
           </div>
           <h1>Welcome Back</h1>
           <p>Sign in to your account</p>

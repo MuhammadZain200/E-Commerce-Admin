@@ -49,8 +49,7 @@ const Register = () => {
       <div className="auth-card">
         <div className="auth-header">
           <div className="auth-logo">
-            <div className="logo-square">EA</div>
-            <div className="logo-text">{settings.storeName || 'E-COMMERCE'} ADMIN</div>
+            <div className="logo-text">{settings.storeName || 'E-COMMERCE'}</div>
           </div>
           <h1>Create Account</h1>
           <p>Sign up to get started</p>

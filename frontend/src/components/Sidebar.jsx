@@ -41,7 +41,7 @@ export default function Sidebar({ user }) {
     <div className="sidebar">
       <div className="sidebar-brand">
         <div className="brand-square">EA</div>
-        <div className="brand-text">{settings.storeName || 'E-COMMERCE'} ADMIN</div>
+        <div className="brand-text">{settings.storeName || 'E-COMMERCE'}</div>
       </div>
 
       <nav className="sidebar-nav">
