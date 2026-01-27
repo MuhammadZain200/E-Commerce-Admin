@@ -174,7 +174,7 @@ export default function UserOrders() {
       <div className="user-orders-page">
         <div className="page-header-section">
           <div>
-            <h1 className="page-title">My Orders</h1>
+            <h1 className="page-title">Orders</h1>
             <p className="page-subtitle">Check status, track shipments, and manage past orders.</p>
           </div>
           <div className="search-filter-section">

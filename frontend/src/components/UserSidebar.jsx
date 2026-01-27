@@ -65,7 +65,7 @@ export default function UserSidebar() {
           className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
         >
           <span className="nav-icon">📦</span>
-          <span className="nav-text">My Orders</span>
+          <span className="nav-text">Orders</span>
         </NavLink>
 
         <div className="nav-separator"></div>
@@ -78,6 +78,18 @@ export default function UserSidebar() {
           <span className="nav-text">Settings</span>
           <span className="dropdown-arrow">▼</span>
         </div>
+        {activeMenu === 'SETTINGS' && (
+          <div className="submenu">
+            <NavLink
+              to="/user/profile"
+              className={({ isActive }) => `submenu-item ${isActive ? 'active' : ''}`}
+              onClick={() => setActiveMenu(null)}
+            >
+              <span className="submenu-icon">👤</span>
+              <span className="submenu-text">User Profile</span>
+            </NavLink>
+          </div>
+        )}
       </nav>
 
       <div className="sidebar-footer">

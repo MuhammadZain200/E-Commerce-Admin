@@ -13,6 +13,7 @@ import UserProductsList from './pages/UserProductsList';
 import UserCart from './pages/UserCart';
 import Checkout from './pages/Checkout';
 import UserOrders from './pages/UserOrders';
+import UserProfile from './pages/UserProfile';
 import StaffStock from './pages/StaffStock';
 import StaffOrders from './pages/StaffOrders';
 import RoleProtectedRoute from './components/RoleProtectedRoute';
@@ -152,6 +153,14 @@ function App() {
           element={
             <RoleProtectedRoute allowedRoles={['user']}>
               <UserOrders />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="/user/profile"
+          element={
+            <RoleProtectedRoute allowedRoles={['user']}>
+              <UserProfile />
             </RoleProtectedRoute>
           }
         />

@@ -48,10 +48,6 @@ export default function UserHeader() {
       </div>
 
       <div className="header-right">
-        <button className="header-icon-btn notification-btn" title="Notifications">
-          <span className="icon">🔔</span>
-          <span className="notification-dot"></span>
-        </button>
         <button 
           className="header-icon-btn cart-btn" 
           title="Cart"

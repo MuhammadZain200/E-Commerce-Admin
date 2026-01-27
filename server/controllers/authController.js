@@ -94,3 +94,111 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+// 3️⃣ Update User Profile (for users to update their own profile)
+exports.updateProfile = async (req, res) => {
+  try {
+    const { name, email, phone } = req.body;
+    const userId = req.user.id; // From auth middleware
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'User not found' 
+      });
+    }
+
+    // Update fields if provided
+    if (name) user.name = name;
+    if (email) {
+      // Check if email is already taken by another user
+      const existingUser = await User.findOne({ email, _id: { $ne: userId } });
+      if (existingUser) {
+        return res.status(400).json({ 
+          success: false,
+          message: 'Email already in use' 
+        });
+      }
+      user.email = email;
+    }
+    if (phone !== undefined) user.phone = phone;
+
+    await user.save();
+
+    // Return updated user (without password)
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role
+      }
+    });
+  } catch (err) {
+    console.error('Update profile error:', err);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error', 
+      error: err.message 
+    });
+  }
+};
+
+// 4️⃣ Change Password (for users to change their own password)
+exports.changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id; // From auth middleware
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Current password and new password are required' 
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'New password must be at least 6 characters' 
+      });
+    }
+
+    const user = await User.findById(userId).select('+password');
+    if (!user) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'User not found' 
+      });
+    }
+
+    // Verify current password
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({ 
+        success: false,
+        message: 'Current password is incorrect' 
+      });
+    }
+
+    // Update password (will be hashed automatically by pre-save hook)
+    user.password = newPassword;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully'
+    });
+  } catch (err) {
+    console.error('Change password error:', err);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error', 
+      error: err.message 
+    });
+  }
+};

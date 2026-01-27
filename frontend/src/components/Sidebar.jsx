@@ -14,7 +14,7 @@ export default function Sidebar({ user }) {
       return [
         { name: 'PRODUCTS', icon: '🛍️', path: '/user/products' },
         { name: 'CART', icon: '🛒', path: '/user/cart' },
-        { name: 'MY ORDERS', icon: '📦', path: '/user/orders' },
+        { name: 'ORDERS', icon: '📦', path: '/user/orders' },
       ];
     } else if (user.role === 'staff') {
       return [
