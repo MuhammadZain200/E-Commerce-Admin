@@ -15,7 +15,20 @@ export const getProducts = async (filters = {}) => {
   if (filters.subCategoryId) params.append('subCategoryId', filters.subCategoryId);
   if (filters.inStock) params.append('inStock', filters.inStock);
 
-  const response = await api.get(`/api/products?${params.toString()}`);
+  const url = `/api/products?${params.toString()}`;
+  console.log('[API] getProducts() - Network request initiated', {
+    url,
+    filters,
+    timestamp: new Date().toISOString(),
+    stackTrace: new Error().stack?.split('\n').slice(1, 4).join('\n') // Show caller
+  });
+  const response = await api.get(url);
+  console.log('[API] getProducts() - Network request completed', {
+    status: response.status,
+    success: response.data?.success,
+    productsCount: response.data?.data?.length || 0,
+    timestamp: new Date().toISOString()
+  });
   return response.data;
 };
 
@@ -24,7 +37,17 @@ export const getProducts = async (filters = {}) => {
  * GET /api/products/categories
  */
 export const getCategories = async () => {
+  console.log('[API] getCategories() - Network request initiated', {
+    url: '/api/products/categories',
+    timestamp: new Date().toISOString(),
+    stackTrace: new Error().stack?.split('\n').slice(1, 4).join('\n') // Show caller
+  });
   const response = await api.get('/api/products/categories');
+  console.log('[API] getCategories() - Network request completed', {
+    status: response.status,
+    success: response.data?.success,
+    timestamp: new Date().toISOString()
+  });
   return response.data;
 };
 

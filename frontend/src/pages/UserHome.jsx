@@ -12,6 +12,16 @@ import { addToCart } from '../api/cart';
 import UserLayout from '../components/UserLayout';
 import './UserHome.css';
 
+// ============================================
+// MODULE-LEVEL GUARD: Persists across component remounts
+// ============================================
+// React StrictMode unmounts and remounts components, which resets useRef.
+// A module-level variable persists across all component instances, preventing
+// duplicate calls even when StrictMode causes remounts.
+// ============================================
+let hasFetchedData = false;
+let isFetching = false;
+
 export default function UserHome() {
   const { user } = useAuth();
   const { refreshCart } = useCart();
@@ -23,42 +33,92 @@ export default function UserHome() {
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState({});
   
-  // Guard to prevent duplicate API calls on mount/re-render
-  // Prevents React StrictMode from causing double calls in development
-  const hasFetchedRef = useRef(false);
+  // Component-level ref for tracking current mount instance
+  // This helps with cleanup if component unmounts during fetch
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
-    // Only fetch once on mount - guard prevents duplicate calls
-    if (hasFetchedRef.current) return;
-    hasFetchedRef.current = true;
-    loadCategories();
-    loadFeaturedProducts();
-  }, []);
+    console.log('[UserHome] Data fetch useEffect triggered', {
+      hasFetchedData,
+      isFetching,
+      user: user ? { id: user._id, role: user.role } : null,
+      timestamp: new Date().toISOString()
+    });
+
+    // Guard 1: Already fetched (module-level, persists across remounts)
+    if (hasFetchedData) {
+      console.log('[UserHome] API calls BLOCKED - already fetched (module-level guard)');
+      return;
+    }
+
+    // Guard 2: Currently fetching (prevents concurrent calls)
+    if (isFetching) {
+      console.log('[UserHome] API calls BLOCKED - fetch in progress');
+      return;
+    }
+    
+    console.log('[UserHome] API calls ALLOWED - first mount');
+    hasFetchedData = true;
+    isFetching = true;
+    
+    // Set mounted flag for cleanup
+    isMountedRef.current = true;
+    
+    // Execute both API calls
+    Promise.all([
+      loadCategories(),
+      loadFeaturedProducts()
+    ]).finally(() => {
+      isFetching = false;
+      console.log('[UserHome] All API calls completed');
+    });
+
+    // Cleanup: Reset mounted flag on unmount
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []); // Empty deps: categories/products APIs are public, don't depend on user/auth
 
   const loadCategories = async () => {
+    console.log('[UserHome] loadCategories() CALLED - making API request');
     try {
       const response = await getCategories();
-      if (response.success) {
+      console.log('[UserHome] loadCategories() SUCCESS', {
+        categoriesCount: response.data?.categories?.length || 0,
+        timestamp: new Date().toISOString()
+      });
+      // Only update state if component is still mounted
+      if (isMountedRef.current && response.success) {
         setCategories(response.data.categories || []);
       }
     } catch (err) {
-      console.error('Failed to load categories:', err);
+      console.error('[UserHome] loadCategories() FAILED:', err);
     }
   };
 
   const loadFeaturedProducts = async () => {
+    console.log('[UserHome] loadFeaturedProducts() CALLED - making API request');
     try {
-      setLoading(true);
+      if (isMountedRef.current) {
+        setLoading(true);
+      }
       const response = await getProducts({});
-      if (response.success) {
+      console.log('[UserHome] loadFeaturedProducts() SUCCESS', {
+        productsCount: response.data?.length || 0,
+        timestamp: new Date().toISOString()
+      });
+      // Only update state if component is still mounted
+      if (isMountedRef.current && response.success) {
         const products = response.data || [];
         // Show first 8 products as featured
         setFeaturedProducts(products.slice(0, 8));
       }
     } catch (err) {
-      console.error('Failed to load products:', err);
+      console.error('[UserHome] loadFeaturedProducts() FAILED:', err);
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 

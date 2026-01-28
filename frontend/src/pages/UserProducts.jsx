@@ -10,6 +10,16 @@ import { getCategories } from '../api/userProducts';
 import UserLayout from '../components/UserLayout';
 import './UserProducts.css';
 
+// ============================================
+// MODULE-LEVEL GUARD: Persists across component remounts
+// ============================================
+// React StrictMode unmounts and remounts components, which resets useRef.
+// A module-level variable persists across all component instances, preventing
+// duplicate calls even when StrictMode causes remounts.
+// ============================================
+let hasFetchedCategories = false;
+let isFetchingCategories = false;
+
 export default function UserProducts() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -17,28 +27,66 @@ export default function UserProducts() {
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState('All Collections');
   
-  // Guard to prevent duplicate API calls on mount/re-render
-  // Prevents React StrictMode from causing double calls in development
-  const hasFetchedRef = useRef(false);
+  // Component-level ref for tracking current mount instance
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
-    // Only fetch once on mount - guard prevents duplicate calls
-    if (hasFetchedRef.current) return;
-    hasFetchedRef.current = true;
-    loadCategories();
-  }, []);
+    console.log('[UserProducts] Categories useEffect triggered', {
+      hasFetchedCategories,
+      isFetchingCategories,
+      user: user ? { id: user._id, role: user.role } : null,
+      timestamp: new Date().toISOString()
+    });
+
+    // Guard 1: Already fetched (module-level, persists across remounts)
+    if (hasFetchedCategories) {
+      console.log('[UserProducts] Categories API call BLOCKED - already fetched (module-level guard)');
+      return;
+    }
+
+    // Guard 2: Currently fetching (prevents concurrent calls)
+    if (isFetchingCategories) {
+      console.log('[UserProducts] Categories API call BLOCKED - fetch in progress');
+      return;
+    }
+    
+    console.log('[UserProducts] Categories API call ALLOWED - first mount');
+    hasFetchedCategories = true;
+    isFetchingCategories = true;
+    isMountedRef.current = true;
+    
+    loadCategories().finally(() => {
+      isFetchingCategories = false;
+      console.log('[UserProducts] Categories API call completed');
+    });
+
+    // Cleanup: Reset mounted flag on unmount
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []); // Empty deps: categories API is public, doesn't depend on user/auth
 
   const loadCategories = async () => {
+    console.log('[UserProducts] loadCategories() CALLED - making API request');
     try {
-      setLoading(true);
+      if (isMountedRef.current) {
+        setLoading(true);
+      }
       const response = await getCategories();
-      if (response.success) {
+      console.log('[UserProducts] loadCategories() SUCCESS', {
+        categoriesCount: response.data?.categories?.length || 0,
+        timestamp: new Date().toISOString()
+      });
+      // Only update state if component is still mounted
+      if (isMountedRef.current && response.success) {
         setCategories(response.data.categories || []);
       }
     } catch (err) {
-      console.error('Failed to load categories:', err);
+      console.error('[UserProducts] loadCategories() FAILED:', err);
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 

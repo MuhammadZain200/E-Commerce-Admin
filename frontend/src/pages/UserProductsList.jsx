@@ -13,6 +13,17 @@ import { addToCart } from '../api/cart';
 import UserLayout from '../components/UserLayout';
 import './UserProductsList.css';
 
+// ============================================
+// MODULE-LEVEL GUARD: Persists across component remounts
+// ============================================
+// React StrictMode unmounts and remounts components, which resets useRef.
+// A module-level variable persists across all component instances, preventing
+// duplicate calls even when StrictMode causes remounts.
+// ============================================
+let hasFetchedCategories = false;
+let isFetchingCategories = false;
+let lastFiltersString = null; // Track filters at module level
+
 export default function UserProductsList() {
   const { user } = useAuth();
   const { refreshCart } = useCart();
@@ -33,60 +44,120 @@ export default function UserProductsList() {
   const [addingToCart, setAddingToCart] = useState({});
   const [displayCount, setDisplayCount] = useState(12);
   
-  // Guard to prevent duplicate categories API call on mount/re-render
-  // Prevents React StrictMode from causing double calls in development
-  const hasFetchedCategoriesRef = useRef(false);
-  
-  // Track last filters to prevent duplicate product calls when filters haven't actually changed
-  // Initialize to null so first call always goes through
-  const lastFiltersRef = useRef(null);
+  // Component-level ref for tracking current mount instance
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
-    // Only fetch categories once on mount - guard prevents duplicate calls
-    if (hasFetchedCategoriesRef.current) return;
-    hasFetchedCategoriesRef.current = true;
-    loadCategories();
-  }, []);
+    console.log('[UserProductsList] Categories useEffect triggered', {
+      hasFetchedCategories,
+      isFetchingCategories,
+      user: user ? { id: user._id, role: user.role } : null,
+      timestamp: new Date().toISOString()
+    });
+
+    // Guard 1: Already fetched (module-level, persists across remounts)
+    if (hasFetchedCategories) {
+      console.log('[UserProductsList] Categories API call BLOCKED - already fetched (module-level guard)');
+      return;
+    }
+
+    // Guard 2: Currently fetching (prevents concurrent calls)
+    if (isFetchingCategories) {
+      console.log('[UserProductsList] Categories API call BLOCKED - fetch in progress');
+      return;
+    }
+    
+    console.log('[UserProductsList] Categories API call ALLOWED - first mount');
+    hasFetchedCategories = true;
+    isFetchingCategories = true;
+    isMountedRef.current = true;
+    
+    loadCategories().finally(() => {
+      isFetchingCategories = false;
+      console.log('[UserProductsList] Categories API call completed');
+    });
+
+    // Cleanup: Reset mounted flag on unmount
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []); // Empty deps: categories API is public, doesn't depend on user/auth
 
   useEffect(() => {
+    const currentFiltersStr = JSON.stringify(filters);
+    
+    console.log('[UserProductsList] Products useEffect triggered', {
+      filtersChanged: lastFiltersString !== currentFiltersStr,
+      currentFilters: filters,
+      lastFilters: lastFiltersString ? JSON.parse(lastFiltersString) : null,
+      user: user ? { id: user._id, role: user.role } : null,
+      timestamp: new Date().toISOString()
+    });
+
     // Only load products if filters have actually changed
     // This prevents duplicate calls when component re-renders with same filters
-    const currentFiltersStr = JSON.stringify(filters);
-    // Allow first call (lastFiltersRef.current === null) or if filters changed
-    if (lastFiltersRef.current !== null && lastFiltersRef.current === currentFiltersStr) return;
-    lastFiltersRef.current = currentFiltersStr;
+    // Allow first call (lastFiltersString === null) or if filters changed
+    if (lastFiltersString !== null && lastFiltersString === currentFiltersStr) {
+      console.log('[UserProductsList] Products API call BLOCKED - filters unchanged');
+      return;
+    }
+    
+    console.log('[UserProductsList] Products API call ALLOWED - filters changed or first mount');
+    lastFiltersString = currentFiltersStr;
     
     loadProducts();
     // Removed automatic polling - products will only load when filters change
-  }, [filters]);
+  }, [filters]); // Depends on filters: products API uses filter values
 
   const loadCategories = async () => {
+    console.log('[UserProductsList] loadCategories() CALLED - making API request');
     try {
       const response = await getCategories();
-      if (response.success) {
+      console.log('[UserProductsList] loadCategories() SUCCESS', {
+        categoriesCount: response.data?.categories?.length || 0,
+        timestamp: new Date().toISOString()
+      });
+      // Only update state if component is still mounted
+      if (isMountedRef.current && response.success) {
         setCategories(response.data.categories || []);
         setSubCategories(response.data.subCategories || []);
       }
     } catch (err) {
-      console.error('Failed to load categories:', err);
+      console.error('[UserProductsList] loadCategories() FAILED:', err);
     }
   };
 
   const loadProducts = async () => {
+    console.log('[UserProductsList] loadProducts() CALLED - making API request', {
+      filters,
+      timestamp: new Date().toISOString()
+    });
     try {
-      setLoading(true);
-      setError(null);
+      if (isMountedRef.current) {
+        setLoading(true);
+        setError(null);
+      }
       const response = await getProducts(filters);
-      if (response.success) {
+      console.log('[UserProductsList] loadProducts() SUCCESS', {
+        productsCount: response.data?.length || 0,
+        filters,
+        timestamp: new Date().toISOString()
+      });
+      // Only update state if component is still mounted
+      if (isMountedRef.current && response.success) {
         const productsData = response.data || [];
         setAllProducts(productsData);
         setProducts(productsData.slice(0, displayCount));
       }
     } catch (err) {
-      console.error('Failed to load products:', err);
-      setError('Failed to load products. Please refresh the page.');
+      console.error('[UserProductsList] loadProducts() FAILED:', err);
+      if (isMountedRef.current) {
+        setError('Failed to load products. Please refresh the page.');
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
