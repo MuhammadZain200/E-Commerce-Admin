@@ -151,17 +151,17 @@ exports.deactivateUser = async (req, res) => {
 // ============================================
 // PATCH /api/admin/users/:id/role
 // ============================================
-// Change user role (admin | staff | user)
+// Change user role (admin | user)
 exports.changeUserRole = async (req, res) => {
   try {
     const { id } = req.params;
     const { role } = req.body;
 
     // Validate role
-    if (!role || !['admin', 'staff', 'user'].includes(role)) {
+    if (!role || !['admin', 'user'].includes(role)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid role. Must be one of: admin, staff, user',
+        message: 'Invalid role. Must be one of: admin, user',
       });
     }
 

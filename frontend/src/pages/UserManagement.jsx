@@ -4,7 +4,7 @@
 // Features:
 // - List all users
 // - Activate/Deactivate users
-// - Change user roles (admin | staff | user)
+// - Change user roles (admin | user)
 
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../components/Sidebar';
@@ -154,10 +154,7 @@ export default function UserManagement() {
     switch (role) {
       case 'admin':
         return 'badge-admin';
-      case 'staff':
-        return 'badge-staff';
       case 'user':
-        return 'badge-user';
       default:
         return 'badge-user';
     }
@@ -272,7 +269,6 @@ export default function UserManagement() {
                                 : ''}
                             >
                               <option value="admin">Admin</option>
-                              <option value="staff">Staff</option>
                               <option value="user">User</option>
                             </select>
 

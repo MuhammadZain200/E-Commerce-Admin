@@ -3,7 +3,7 @@
 // User Products List Page - Shows products filtered by category
 // This is the actual product listing page
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -32,12 +32,30 @@ export default function UserProductsList() {
   });
   const [addingToCart, setAddingToCart] = useState({});
   const [displayCount, setDisplayCount] = useState(12);
+  
+  // Guard to prevent duplicate categories API call on mount/re-render
+  // Prevents React StrictMode from causing double calls in development
+  const hasFetchedCategoriesRef = useRef(false);
+  
+  // Track last filters to prevent duplicate product calls when filters haven't actually changed
+  // Initialize to null so first call always goes through
+  const lastFiltersRef = useRef(null);
 
   useEffect(() => {
+    // Only fetch categories once on mount - guard prevents duplicate calls
+    if (hasFetchedCategoriesRef.current) return;
+    hasFetchedCategoriesRef.current = true;
     loadCategories();
   }, []);
 
   useEffect(() => {
+    // Only load products if filters have actually changed
+    // This prevents duplicate calls when component re-renders with same filters
+    const currentFiltersStr = JSON.stringify(filters);
+    // Allow first call (lastFiltersRef.current === null) or if filters changed
+    if (lastFiltersRef.current !== null && lastFiltersRef.current === currentFiltersStr) return;
+    lastFiltersRef.current = currentFiltersStr;
+    
     loadProducts();
     // Removed automatic polling - products will only load when filters change
   }, [filters]);

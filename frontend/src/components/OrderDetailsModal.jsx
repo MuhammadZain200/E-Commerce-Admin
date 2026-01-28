@@ -84,12 +84,6 @@ export default function OrderDetailsModal({ isOpen, onClose, order, loading }) {
               <span className="info-label">Order Date:</span>
               <span className="info-value">{formatDate(order.createdAt)}</span>
             </div>
-            {order.assignedStaffId && (
-              <div className="info-row">
-                <span className="info-label">Assigned Staff:</span>
-                <span className="info-value">{order.assignedStaffId.name || 'N/A'}</span>
-              </div>
-            )}
           </div>
 
           {/* Order Items Section */}

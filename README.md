@@ -61,7 +61,7 @@ frontend/src/
 
 1. **User Authentication & Authorization**
    - JWT-based authentication
-   - Role-based access control (Admin, Staff, User)
+   - Role-based access control (Admin, User)
    - Protected routes and API endpoints
 
 2. **Product Management**
@@ -90,24 +90,14 @@ frontend/src/
 
 ## 🔐 Role Logic
 
-### Role Hierarchy
+### Roles
 
-```
-Admin > Staff > User
-```
+The system defines two roles:
 
-### Permissions Matrix
+- **Admin**
+- **User**
 
-| Feature | Admin | Staff | User |
-|---------|-------|-------|------|
-| View Products | ✅ | ✅ | ✅ |
-| Create Products | ✅ | ❌ | ❌ |
-| Edit Products | ✅ | ❌ | ❌ |
-| Delete Products | ✅ | ❌ | ❌ |
-| View All Orders | ✅ | ✅ | ❌ (Own only) |
-| Update Order Status | ✅ | ✅ | ❌ |
-| View Dashboard | ✅ | ✅ | ✅ (Limited) |
-| Create Orders | ✅ | ✅ | ✅ |
+Admins manage products, stock, and all orders. Users can browse products, manage their cart, and place and view their own orders.
 
 ### Implementation Details
 
@@ -122,7 +112,6 @@ Admin > Staff > User
 **API Protection:**
 - All routes except `/api/auth/*` require authentication
 - Admin routes check for `role === 'admin'`
-- Staff routes check for `role === 'admin' || role === 'staff'`
 
 ## 📦 Order Flow
 
@@ -130,7 +119,7 @@ Admin > Staff > User
 
 ```
 1. CREATED
-   ↓ (User/Staff/Admin creates order)
+   ↓ (User/Admin creates order)
 2. PAID
    ↓ (Stock is decremented atomically)
 3. PACKED
@@ -168,7 +157,7 @@ delivered → (no further transitions)
 
 **Validation:**
 - Invalid transitions return `400 Bad Request`
-- Only Admin/Staff can update order status
+- Only Admin can update order status
 - Delivered orders cannot be modified
 
 ## 🛡️ Edge Cases Handled
@@ -214,7 +203,7 @@ delivered → (no further transitions)
 
 **Order Access:**
 - ✅ Users can only view their own orders
-- ✅ Admin/Staff can view all orders
+- ✅ Admin can view all orders
 - ✅ Order details populated with product and user info
 
 **Empty States:**
@@ -323,10 +312,10 @@ npm run seed:orders
 - `DELETE /api/products/:id` - Delete product (Admin only)
 
 ### Orders
-- `GET /api/orders` - Get orders (all for Admin/Staff, own for User)
+- `GET /api/orders` - Get orders (all for Admin, own for User)
 - `POST /api/orders` - Create order
 - `GET /api/orders/:id` - Get order by ID
-- `PATCH /api/orders/:id/status` - Update order status (Admin/Staff only)
+- `PATCH /api/orders/:id/status` - Update order status (Admin only)
 
 ### Dashboard
 - `GET /api/dashboard/stats` - Get dashboard statistics

@@ -74,7 +74,7 @@ export const deactivateUser = async (userId) => {
  * Change user role
  * PATCH /api/admin/users/:id/role
  * @param {string} userId - User ID
- * @param {string} role - New role (admin | staff | user)
+ * @param {string} role - New role (admin | user)
  */
 export const changeUserRole = async (userId, role) => {
   const response = await api.patch(`/api/admin/users/${userId}/role`, { role });

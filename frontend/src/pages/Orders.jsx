@@ -63,8 +63,8 @@ export default function Orders() {
   };
 
   const canUpdateStatus = (userRole, orderStatus) => {
-    // Only admin and staff can update order status
-    if (userRole !== 'admin' && userRole !== 'staff') {
+    // Only admin can update order status
+    if (userRole !== 'admin') {
       return false;
     }
     // Can't update if already delivered (final state)

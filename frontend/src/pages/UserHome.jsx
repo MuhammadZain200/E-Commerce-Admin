@@ -2,7 +2,7 @@
 //
 // User Home Page - Dashboard with welcome, promotional banner, categories, and featured products
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -22,8 +22,15 @@ export default function UserHome() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState({});
+  
+  // Guard to prevent duplicate API calls on mount/re-render
+  // Prevents React StrictMode from causing double calls in development
+  const hasFetchedRef = useRef(false);
 
   useEffect(() => {
+    // Only fetch once on mount - guard prevents duplicate calls
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
     loadCategories();
     loadFeaturedProducts();
   }, []);

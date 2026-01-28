@@ -3,7 +3,7 @@
 // Settings Context - Global settings state management
 // Provides store name and other settings to all components
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { getSettings, getPublicSettings } from '../api/settings';
 import { useAuth } from './AuthContext';
 
@@ -20,8 +20,12 @@ export const SettingsProvider = ({ children }) => {
     allowEditingPaidOrders: false,
   });
   const [loading, setLoading] = useState(true);
+  
+  // Guard to prevent duplicate API calls on mount/re-render
+  // Tracks the last user ID and role we fetched settings for
+  const lastFetchedUserRef = useRef({ userId: null, role: null });
 
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     try {
       let response;
       
@@ -56,11 +60,23 @@ export const SettingsProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
-    loadSettings();
-  }, [user]);
+    // Get current user identifier for comparison
+    const currentUserId = user?._id || null;
+    const currentRole = user?.role || null;
+    
+    // Only fetch if user ID or role has actually changed
+    // This prevents duplicate calls when user object reference changes but values are the same
+    if (
+      lastFetchedUserRef.current.userId !== currentUserId ||
+      lastFetchedUserRef.current.role !== currentRole
+    ) {
+      lastFetchedUserRef.current = { userId: currentUserId, role: currentRole };
+      loadSettings();
+    }
+  }, [user?._id, user?.role, loadSettings]);
 
   const updateSettings = (newSettings) => {
     setSettings((prev) => ({

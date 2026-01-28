@@ -31,7 +31,7 @@ router.put('/:id', protect, roleMiddleware('admin'), updateProduct);
 // Delete product (admin only)
 router.delete('/:id', protect, roleMiddleware('admin'), deleteProduct);
 
-// Dashboard stats (any authenticated user - admin/staff)
+// Dashboard stats (any authenticated user - admin)
 router.get('/dashboard/stats', protect, getDashboardStats);
 
 // Analytics endpoint (admin only)

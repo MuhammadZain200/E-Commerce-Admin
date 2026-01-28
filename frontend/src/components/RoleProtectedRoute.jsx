@@ -12,7 +12,7 @@ import { useAuth } from '../context/AuthContext';
  *  - allowedRoles: array of roles allowed to access this route
  *
  * Usage:
- * <RoleProtectedRoute allowedRoles={['admin', 'staff']}>
+ * <RoleProtectedRoute allowedRoles={['admin']}>
  *    <AdminDashboard />
  * </RoleProtectedRoute>
  */

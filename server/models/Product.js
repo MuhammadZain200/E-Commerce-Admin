@@ -2,7 +2,7 @@
 //
 // Product Model - Products in the e-commerce store
 // Admin can create/update/delete products
-// Staff can update stock
+// Admin can update stock
 // Users can browse and purchase
 
 const mongoose = require('mongoose');
@@ -39,7 +39,7 @@ const productSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true,
-      // If false, product is hidden from users but visible to staff/admin
+      // If false, product is hidden from users but visible to admin
     },
   },
   { timestamps: true }

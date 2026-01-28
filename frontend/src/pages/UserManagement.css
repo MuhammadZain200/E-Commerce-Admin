@@ -117,10 +117,7 @@
   color: #1976d2;
 }
 
-.badge-staff {
-  background-color: #fff3e0;
-  color: #f57c00;
-}
+/* .badge-staff removed: staff role is no longer supported */
 
 .badge-user {
   background-color: #f3e5f5;

@@ -3,7 +3,7 @@
 // User Products Page - Browse by Category
 // Shows category cards with product counts
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getCategories } from '../api/userProducts';
@@ -16,8 +16,15 @@ export default function UserProducts() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState('All Collections');
+  
+  // Guard to prevent duplicate API calls on mount/re-render
+  // Prevents React StrictMode from causing double calls in development
+  const hasFetchedRef = useRef(false);
 
   useEffect(() => {
+    // Only fetch once on mount - guard prevents duplicate calls
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
     loadCategories();
   }, []);
 

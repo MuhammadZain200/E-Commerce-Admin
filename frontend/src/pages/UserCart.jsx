@@ -7,40 +7,26 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useNotification } from '../context/NotificationContext';
-import { getCart, updateCartItem, removeFromCart, clearCart } from '../api/cart';
+// Removed getCart import - using cart from CartContext instead
+import { updateCartItem, removeFromCart, clearCart } from '../api/cart';
 import UserLayout from '../components/UserLayout';
 import './UserCart.css';
 
 export default function UserCart() {
   const { user } = useAuth();
-  const { refreshCart } = useCart();
+  // Use cart from context instead of making duplicate API call
+  // CartContext already fetches cart on mount and when user changes
+  const { cart: cartFromContext, refreshCart } = useCart();
   const { success, error: showError, info } = useNotification();
   const navigate = useNavigate();
-  const [cart, setCart] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [updating, setUpdating] = useState({});
   const [promoCode, setPromoCode] = useState('');
 
-  useEffect(() => {
-    loadCart();
-  }, []);
-
-  const loadCart = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await getCart();
-      if (response.success) {
-        setCart(response.data);
-      }
-    } catch (err) {
-      console.error('Failed to load cart:', err);
-      setError('Failed to load cart. Please refresh the page.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Use cart from context - no need for separate API call
+  // CartContext already fetches cart on mount and when user changes
+  const cart = cartFromContext;
+  const loading = cart === null && !error; // Loading if cart is null and no error yet
 
   const handleQuantityChange = async (productId, newQuantity) => {
     if (newQuantity < 1) return;
@@ -48,8 +34,7 @@ export default function UserCart() {
     try {
       setUpdating({ ...updating, [productId]: true });
       await updateCartItem(productId, newQuantity);
-      await loadCart();
-      refreshCart(); // Update global cart count
+      refreshCart(); // Update global cart - no need for separate loadCart call
       success('Quantity updated successfully');
     } catch (err) {
       showError(err.response?.data?.message || 'Failed to update quantity');
@@ -61,8 +46,7 @@ export default function UserCart() {
   const handleRemoveItem = async (productId) => {
     try {
       await removeFromCart(productId);
-      await loadCart();
-      refreshCart(); // Update global cart count
+      refreshCart(); // Update global cart - no need for separate loadCart call
       success('Item removed from cart');
     } catch (err) {
       showError(err.response?.data?.message || 'Failed to remove item');
@@ -72,8 +56,7 @@ export default function UserCart() {
   const handleClearCart = async () => {
     try {
       await clearCart();
-      await loadCart();
-      refreshCart(); // Update global cart count
+      refreshCart(); // Update global cart - no need for separate loadCart call
       success('Cart cleared successfully');
     } catch (err) {
       showError(err.response?.data?.message || 'Failed to clear cart');

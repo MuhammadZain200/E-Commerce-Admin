@@ -20,11 +20,6 @@ export default function Navbar() {
         <button onClick={() => navigate('/admin')}>Admin Panel</button>
       )}
 
-      {/* Staff button - only visible to staff */}
-      {user?.role === 'staff' && (
-        <button onClick={() => navigate('/staff')}>Staff Panel</button>
-      )}
-
       {user && <button onClick={handleLogout}>Logout</button>}
     </nav>
   );

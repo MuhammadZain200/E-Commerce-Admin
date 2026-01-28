@@ -38,57 +38,46 @@ const isValidTransition = (currentStatus, newStatus, allowStatusSkipping = false
 };
 
 // Create order
+// Uses atomic operations instead of transactions for standalone MongoDB compatibility
 const createOrder = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  let createdOrder = null;
 
   try {
     const { items } = req.body;
     const userId = req.user.id;
 
     if (!items || items.length === 0) {
-      await session.abortTransaction();
-      session.endSession();
       return res.status(400).json({ message: 'Order must have at least one item' });
     }
 
     // Get settings to calculate tax
     const settings = await Settings.getSettings();
 
-    // Validate items and check stock availability atomically
+    // First pass: validate all items and check stock availability
     let subtotal = 0;
     const validatedItems = [];
     const stockUpdates = [];
 
-    // First pass: validate all items and prepare stock updates
     for (const item of items) {
-      const product = await Product.findById(item.productId).session(session);
+      const product = await Product.findById(item.productId);
       
       if (!product) {
-        await session.abortTransaction();
-        session.endSession();
         return res.status(404).json({ message: `Product ${item.productId} not found` });
       }
 
       if (!product.isActive) {
-        await session.abortTransaction();
-        session.endSession();
         return res.status(400).json({ 
           message: `Product ${product.name} is not available` 
         });
       }
 
       if (product.stock <= 0) {
-        await session.abortTransaction();
-        session.endSession();
         return res.status(400).json({ 
           message: `Product ${product.name} is out of stock` 
         });
       }
 
       if (product.stock < item.quantity) {
-        await session.abortTransaction();
-        session.endSession();
         return res.status(400).json({ 
           message: `Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${item.quantity}` 
         });
@@ -105,11 +94,11 @@ const createOrder = async (req, res) => {
         price: itemPrice,
       });
 
-      // Prepare stock update
+      // Prepare stock update with current stock for atomic check
       stockUpdates.push({
         productId: product._id,
         quantity: item.quantity,
-        newStock: product.stock - item.quantity,
+        currentStock: product.stock,
       });
     }
 
@@ -117,7 +106,7 @@ const createOrder = async (req, res) => {
     const taxAmount = (subtotal * settings.taxRate) / 100;
     const totalAmount = subtotal + taxAmount;
 
-    // Create order within transaction
+    // Create order first
     const order = new Order({
       items: validatedItems,
       totalAmount: Math.round(totalAmount * 100) / 100,
@@ -126,31 +115,52 @@ const createOrder = async (req, res) => {
       createdBy: userId,
     });
 
-    await order.save({ session });
+    createdOrder = await order.save();
 
-    // Atomically decrement stock for all products
+    // Atomically decrement stock for all products using findOneAndUpdate with conditions
+    // This ensures stock is only decremented if it's still sufficient
+    const stockUpdateResults = [];
     for (const update of stockUpdates) {
-      await Product.findByIdAndUpdate(
-        update.productId,
+      // Use findOneAndUpdate with condition to atomically check and decrement stock
+      const result = await Product.findOneAndUpdate(
+        {
+          _id: update.productId,
+          stock: { $gte: update.quantity }, // Only update if stock is still sufficient
+        },
         { $inc: { stock: -update.quantity } },
-        { session, new: true }
+        { new: true }
       );
+
+      if (!result) {
+        // Stock was insufficient - rollback order
+        await Order.findByIdAndDelete(createdOrder._id);
+        return res.status(400).json({
+          message: `Insufficient stock detected during order processing. Please try again.`,
+        });
+      }
+
+      stockUpdateResults.push(result);
     }
 
-    // Commit transaction
-    await session.commitTransaction();
-    session.endSession();
-    
     // Populate product details for response
     await order.populate('items.productId', 'name price stock');
     await order.populate('createdBy', 'name email');
 
     res.status(201).json(order);
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
+    // Rollback order if it was created
+    if (createdOrder) {
+      try {
+        await Order.findByIdAndDelete(createdOrder._id);
+      } catch (rollbackError) {
+        console.error('Error rolling back order:', rollbackError);
+      }
+    }
+
     console.error('Create order error:', error);
-    res.status(400).json({ message: error.message || 'Failed to create order' });
+    res.status(400).json({ 
+      message: error.message || 'Failed to create order' 
+    });
   }
 };
 
@@ -187,91 +197,18 @@ const updateOrderStatus = async (req, res) => {
       });
     }
 
-    // If transitioning to 'paid', decrease stock atomically
-    if (status === 'paid' && order.status === 'created') {
-      const session = await mongoose.startSession();
-      session.startTransaction();
-
-      try {
-        const stockUpdates = [];
-        const originalStocks = [];
-
-        // First pass: validate all stock and prepare updates
-        for (const item of order.items) {
-          const product = await Product.findById(item.productId).session(session);
-          
-          if (!product) {
-            await session.abortTransaction();
-            session.endSession();
-            return res.status(404).json({ message: `Product ${item.productId} not found` });
-          }
-
-          if (product.stock < item.quantity) {
-            await session.abortTransaction();
-            session.endSession();
-            return res.status(400).json({ 
-              message: `Insufficient stock for ${product.name}. Available: ${product.stock}, Required: ${item.quantity}` 
-            });
-          }
-
-          // Store original stock for rollback
-          originalStocks.push({
-            productId: product._id,
-            originalStock: product.stock
-          });
-
-          // Prepare stock update
-          stockUpdates.push({
-            updateOne: {
-              filter: { _id: product._id, stock: { $gte: item.quantity } },
-              update: { $inc: { stock: -item.quantity } }
-            }
-          });
-        }
-
-        // Atomic bulk update - only succeeds if all products have sufficient stock
-        if (stockUpdates.length > 0) {
-          const bulkResult = await Product.bulkWrite(stockUpdates, { session });
-          
-          // Verify all updates succeeded
-          if (bulkResult.modifiedCount !== stockUpdates.length) {
-            await session.abortTransaction();
-            session.endSession();
-            return res.status(400).json({ 
-              message: 'Stock update failed. One or more products may have insufficient stock.' 
-            });
-          }
-        }
-
-        // Update payment status and order status
-        order.paymentStatus = 'paid';
-        order.status = status;
-        await order.save({ session });
-
-        // Commit transaction
-        await session.commitTransaction();
-        session.endSession();
-        
-        // Populate for response
-        await order.populate('items.productId', 'name price stock');
-        await order.populate('createdBy', 'name email');
-        
-        return res.json(order);
-      } catch (error) {
-        // Rollback on any error
-        await session.abortTransaction();
-        session.endSession();
-        console.error('Stock update error (rolled back):', error);
-        return res.status(500).json({ 
-          message: 'Failed to update stock. Transaction rolled back.',
-          error: error.message 
-        });
-      }
-    } else {
-      // Update order status (for non-paid transitions)
-      order.status = status;
-      await order.save();
+    // Note: Stock is decremented when order is created (in createOrder function)
+    // So we don't need to decrement stock here when status changes to 'paid'
+    // This prevents double-decrementing and works with standalone MongoDB
+    
+    // If transitioning to 'paid', update payment status
+    if (status === 'paid') {
+      order.paymentStatus = 'paid';
     }
+    
+    // Update order status
+    order.status = status;
+    await order.save();
 
     // Populate for response
     await order.populate('items.productId', 'name price stock');
@@ -290,16 +227,15 @@ const getOrders = async (req, res) => {
     const userId = req.user.id;
     const userRole = req.user.role;
 
-    // Admin and staff can see all orders, users can only see their own
-    const query = userRole === 'admin' || userRole === 'staff' 
-      ? {} 
+    // Admin can see all orders, users can only see their own
+    const query = userRole === 'admin'
+      ? {}
       : { createdBy: userId };
 
     const orders = await Order.find(query)
       .sort({ createdAt: -1 })
       .populate('items.productId', 'name price stock')
-      .populate('createdBy', 'name email')
-      .populate('assignedStaffId', 'name email');
+      .populate('createdBy', 'name email');
 
     res.json({
       success: true,
@@ -324,8 +260,7 @@ const getOrderById = async (req, res) => {
 
     const order = await Order.findById(id)
       .populate('items.productId', 'name price stock')
-      .populate('createdBy', 'name email')
-      .populate('assignedStaffId', 'name email');
+      .populate('createdBy', 'name email');
 
     if (!order) {
       return res.status(404).json({ 
@@ -334,8 +269,8 @@ const getOrderById = async (req, res) => {
       });
     }
 
-    // Users can only view their own orders (unless admin/staff)
-    if (userRole !== 'admin' && userRole !== 'staff' && order.createdBy._id.toString() !== userId) {
+    // Users can only view their own orders (unless admin)
+    if (userRole !== 'admin' && order.createdBy._id.toString() !== userId) {
       return res.status(403).json({ 
         success: false,
         message: 'Access denied' 
@@ -356,39 +291,39 @@ const getOrderById = async (req, res) => {
 // Checkout from cart (User)
 // ============================================
 // Creates order from cart and clears cart
+// Uses atomic operations instead of transactions for standalone MongoDB compatibility
 const checkoutFromCart = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  let createdOrder = null;
+  let cartToRestore = null;
 
   try {
     const userId = req.user.id;
 
-    // Get user's cart within transaction
-    const cart = await Cart.findOne({ userId }).populate('items.productId').session(session);
+    // Get user's cart
+    const cart = await Cart.findOne({ userId }).populate('items.productId');
     
     if (!cart || !cart.items || cart.items.length === 0) {
-      await session.abortTransaction();
-      session.endSession();
       return res.status(400).json({
         success: false,
         message: 'Cart is empty',
       });
     }
 
+    // Save cart state for potential rollback
+    cartToRestore = JSON.parse(JSON.stringify(cart.items));
+
     // Get settings for tax calculation
     const settings = await Settings.getSettings();
 
-    // Validate items and check stock atomically
+    // Validate items and check stock
     let subtotal = 0;
     const validatedItems = [];
     const stockUpdates = [];
 
     for (const cartItem of cart.items) {
-      const product = await Product.findById(cartItem.productId._id).session(session);
+      const product = await Product.findById(cartItem.productId._id);
 
       if (!product || !product.isActive) {
-        await session.abortTransaction();
-        session.endSession();
         return res.status(400).json({
           success: false,
           message: `Product ${product?.name || 'Unknown'} is no longer available`,
@@ -396,8 +331,6 @@ const checkoutFromCart = async (req, res) => {
       }
 
       if (product.stock <= 0) {
-        await session.abortTransaction();
-        session.endSession();
         return res.status(400).json({
           success: false,
           message: `Product ${product.name} is out of stock`,
@@ -405,8 +338,6 @@ const checkoutFromCart = async (req, res) => {
       }
 
       if (product.stock < cartItem.quantity) {
-        await session.abortTransaction();
-        session.endSession();
         return res.status(400).json({
           success: false,
           message: `Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${cartItem.quantity}`,
@@ -423,10 +354,11 @@ const checkoutFromCart = async (req, res) => {
         price: itemPrice,
       });
 
-      // Prepare stock update
+      // Prepare stock update with current stock for atomic check
       stockUpdates.push({
         productId: product._id,
         quantity: cartItem.quantity,
+        currentStock: product.stock,
       });
     }
 
@@ -434,7 +366,7 @@ const checkoutFromCart = async (req, res) => {
     const taxAmount = (subtotal * settings.taxRate) / 100;
     const totalAmount = subtotal + taxAmount;
 
-    // Create order within transaction
+    // Create order
     const order = new Order({
       items: validatedItems,
       totalAmount: Math.round(totalAmount * 100) / 100,
@@ -443,24 +375,34 @@ const checkoutFromCart = async (req, res) => {
       createdBy: userId,
     });
 
-    await order.save({ session });
+    createdOrder = await order.save();
 
-    // Atomically decrement stock for all products
+    // Atomically decrement stock for all products using findOneAndUpdate with conditions
     for (const update of stockUpdates) {
-      await Product.findByIdAndUpdate(
-        update.productId,
+      const result = await Product.findOneAndUpdate(
+        {
+          _id: update.productId,
+          stock: { $gte: update.quantity }, // Only update if stock is still sufficient
+        },
         { $inc: { stock: -update.quantity } },
-        { session, new: true }
+        { new: true }
       );
+
+      if (!result) {
+        // Stock was insufficient - rollback order and restore cart
+        await Order.findByIdAndDelete(createdOrder._id);
+        cart.items = cartToRestore;
+        await cart.save();
+        return res.status(400).json({
+          success: false,
+          message: `Insufficient stock detected during checkout. Please try again.`,
+        });
+      }
     }
 
-    // Clear cart after successful order creation
+    // Clear cart after successful order creation and stock updates
     cart.items = [];
-    await cart.save({ session });
-
-    // Commit transaction
-    await session.commitTransaction();
-    session.endSession();
+    await cart.save();
 
     // Populate for response
     await order.populate('items.productId', 'name price stock');
@@ -472,8 +414,28 @@ const checkoutFromCart = async (req, res) => {
       data: order,
     });
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
+    // Rollback order if it was created
+    if (createdOrder) {
+      try {
+        await Order.findByIdAndDelete(createdOrder._id);
+      } catch (rollbackError) {
+        console.error('Error rolling back order:', rollbackError);
+      }
+    }
+
+    // Restore cart if it was modified
+    if (cartToRestore) {
+      try {
+        const cart = await Cart.findOne({ userId: req.user.id });
+        if (cart) {
+          cart.items = cartToRestore;
+          await cart.save();
+        }
+      } catch (rollbackError) {
+        console.error('Error restoring cart:', rollbackError);
+      }
+    }
+
     console.error('Checkout from cart error:', error);
     res.status(500).json({
       success: false,

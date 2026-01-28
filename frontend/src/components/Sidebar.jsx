@@ -18,12 +18,9 @@ export default function Sidebar({ user }) {
         { name: 'CART', icon: '🛒', path: '/user/cart' },
         { name: 'ORDERS', icon: '📦', path: '/user/orders' },
       ];
-    } else if (user.role === 'staff') {
-      return [
-        { name: 'ORDERS', icon: '📋', path: '/staff/orders' },
-        { name: 'STOCK', icon: '📦', path: '/staff/stock' },
-      ];
-    } else if (user.role === 'admin') {
+    }
+
+    if (user.role === 'admin') {
       return [
         { name: 'DASHBOARD', icon: '📊', path: '/dashboard/admin' },
         { name: 'PRODUCTS', icon: '📦', path: '/products' },
@@ -32,6 +29,7 @@ export default function Sidebar({ user }) {
         { name: 'SETTINGS', icon: '⚙️', submenu: true },
       ];
     }
+
     return [];
   };
 

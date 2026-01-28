@@ -14,8 +14,6 @@ import UserCart from './pages/UserCart';
 import Checkout from './pages/Checkout';
 import UserOrders from './pages/UserOrders';
 import UserProfile from './pages/UserProfile';
-import StaffStock from './pages/StaffStock';
-import StaffOrders from './pages/StaffOrders';
 import RoleProtectedRoute from './components/RoleProtectedRoute';
 import ProtectedRoute from './components/ProtectedRoute';
 import NotificationContainer from './components/Notification';
@@ -35,15 +33,6 @@ function App() {
           element={
             <RoleProtectedRoute allowedRoles={['user']}>
               <UserProducts />
-            </RoleProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/dashboard/staff"
-          element={
-            <RoleProtectedRoute allowedRoles={['staff']}>
-              <StaffOrders />
             </RoleProtectedRoute>
           }
         />
@@ -161,24 +150,6 @@ function App() {
           element={
             <RoleProtectedRoute allowedRoles={['user']}>
               <UserProfile />
-            </RoleProtectedRoute>
-          }
-        />
-
-        {/* Staff routes - staff only */}
-        <Route
-          path="/staff/stock"
-          element={
-            <RoleProtectedRoute allowedRoles={['staff', 'admin']}>
-              <StaffStock />
-            </RoleProtectedRoute>
-          }
-        />
-        <Route
-          path="/staff/orders"
-          element={
-            <RoleProtectedRoute allowedRoles={['staff', 'admin']}>
-              <StaffOrders />
             </RoleProtectedRoute>
           }
         />

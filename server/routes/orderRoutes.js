@@ -16,14 +16,14 @@ router.post('/', protect, createOrder);
 // Checkout from cart (user only)
 router.post('/checkout', protect, roleMiddleware('user'), checkoutFromCart);
 
-// Get all orders (admin/staff see all, users see their own)
+// Get all orders (admin sees all, users see their own)
 router.get('/', protect, getOrders);
 
 // Get single order
 router.get('/:id', protect, getOrderById);
 
-// Update order status (admin/staff only)
-router.patch('/:id/status', protect, roleMiddleware('admin', 'staff'), updateOrderStatus);
+// Update order status (admin only)
+router.patch('/:id/status', protect, roleMiddleware('admin'), updateOrderStatus);
 
 module.exports = router;
 
