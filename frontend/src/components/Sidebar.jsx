@@ -81,6 +81,14 @@ export default function Sidebar({ user }) {
                       <span>Store Settings</span>
                     </NavLink>
                     <NavLink 
+                      to="/categories" 
+                      className={({ isActive }) => `submenu-item ${isActive ? 'active' : ''}`}
+                      onClick={() => setActiveMenu(null)}
+                    >
+                      <span className="submenu-icon">📁</span>
+                      <span>Categories & Subcategories</span>
+                    </NavLink>
+                    <NavLink 
                       to="/users" 
                       className={({ isActive }) => `submenu-item ${isActive ? 'active' : ''}`}
                       onClick={() => setActiveMenu(null)}

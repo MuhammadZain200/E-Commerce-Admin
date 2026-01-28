@@ -14,6 +14,11 @@ const categorySchema = new mongoose.Schema(
       unique: true,
       maxlength: [100, 'Category name cannot exceed 100 characters'],
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+      // If false, category is soft-deleted (hidden from users but visible to admin)
+    },
   },
   { timestamps: true }
 );

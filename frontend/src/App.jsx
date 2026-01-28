@@ -7,6 +7,7 @@ import Orders from './pages/Orders';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import UserManagement from './pages/UserManagement';
+import Categories from './pages/Categories';
 import UserHome from './pages/UserHome';
 import UserProducts from './pages/UserProducts';
 import UserProductsList from './pages/UserProductsList';
@@ -92,6 +93,16 @@ function App() {
           element={
             <RoleProtectedRoute allowedRoles={['admin']}>
               <UserManagement />
+            </RoleProtectedRoute>
+          }
+        />
+
+        {/* Categories Management route - admin only */}
+        <Route
+          path="/categories"
+          element={
+            <RoleProtectedRoute allowedRoles={['admin']}>
+              <Categories />
             </RoleProtectedRoute>
           }
         />

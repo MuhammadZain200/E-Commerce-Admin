@@ -38,10 +38,29 @@ exports.getProducts = async (req, res) => {
     }
 
     // Get products with populated category and subcategory info
-    const products = await Product.find(query)
-      .populate('categoryId', 'name')
-      .populate('subCategoryId', 'name')
+    let products = await Product.find(query)
+      .populate('categoryId', 'name isActive')
+      .populate('subCategoryId', 'name isActive')
       .sort({ createdAt: -1 });
+
+    // Filter out products where category or subcategory is inactive
+    // Users shouldn't see products with disabled categories/subcategories
+    products = products.filter((product) => {
+      const category = product.categoryId;
+      const subCategory = product.subCategoryId;
+      
+      // Check if category exists and is active
+      if (!category || (category.isActive === false)) {
+        return false;
+      }
+      
+      // Check if subcategory exists and is active
+      if (!subCategory || (subCategory.isActive === false)) {
+        return false;
+      }
+      
+      return true;
+    });
 
     res.json({
       success: true,
@@ -62,15 +81,18 @@ exports.getProducts = async (req, res) => {
 // GET /api/products/categories
 // ============================================
 // Get all categories and subcategories for filtering
+// Only returns active categories and subcategories (users shouldn't see disabled ones)
 // Includes product counts per category
 exports.getCategoriesForFilter = async (req, res) => {
   try {
-    const categories = await Category.find().sort({ name: 1 });
-    const subCategories = await SubCategory.find()
+    // Only get active categories for users
+    const categories = await Category.find({ isActive: true }).sort({ name: 1 });
+    // Only get active subcategories for users
+    const subCategories = await SubCategory.find({ isActive: true })
       .populate('categoryId', 'name')
       .sort({ name: 1 });
 
-    // Get product counts for each category
+    // Get product counts for each category (only count active products)
     const categoriesWithCounts = await Promise.all(
       categories.map(async (category) => {
         const productCount = await Product.countDocuments({

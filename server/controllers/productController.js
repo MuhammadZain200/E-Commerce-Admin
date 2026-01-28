@@ -38,10 +38,15 @@ const deleteProduct = async (req, res) => {
   }
 };
 
-// List all products
+// List all products (Admin can see all products, including inactive ones)
+// Populate category and subcategory for better display
 const getProducts = async (req, res) => {
   try {
-    const products = await Product.find();
+    const products = await Product.find()
+      .populate('categoryId', 'name isActive')
+      .populate('subCategoryId', 'name isActive')
+      .sort({ createdAt: -1 });
+    
     res.json(products);
   } catch (error) {
     res.status(400).json({ message: error.message });

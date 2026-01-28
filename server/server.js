@@ -40,9 +40,11 @@ const publicSettingsRouter = express.Router();
 publicSettingsRouter.get('/public', getPublicSettings);
 app.use('/api/settings', publicSettingsRouter);
 
-app.use('/api/admin', settingsRoutes); // settings & user management routes (specific paths first)
-app.use('/api/admin', categoryRoutes); // category routes (specific paths)
-app.use('/api/admin', adminRoutes); // admin product routes (parameterized routes)
+// Admin routes - mount in order of specificity to avoid conflicts
+// Most specific paths first, then general routes
+app.use('/api/admin', settingsRoutes); // settings & user management routes (/settings, /users)
+app.use('/api/admin/categories', categoryRoutes); // category routes (/categories, /subcategories)
+app.use('/api/admin', adminRoutes); // admin product routes (/, /:id, /dashboard/stats, /analytics)
 app.use('/api/auth', authRoutes);   // authentication routes
 app.use('/api/products', userProductRoutes); // user product browsing (public/user)
 app.use('/api/cart', cartRoutes); // cart routes (user only)

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { fetchProducts, deleteProduct } from '../api/products';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
@@ -20,31 +20,52 @@ export default function Products() {
   const [editingProduct, setEditingProduct] = useState(null);
 
   const { user } = useAuth();
+  
+  // Component-level ref for tracking mount state
+  const isMountedRef = useRef(true);
 
   // Load products from backend
   const loadProducts = async () => {
+    if (!isMountedRef.current) return; // Don't update if unmounted
+    
     setLoading(true);
     try {
       const res = await fetchProducts();
-      // Handle different response formats
-      const productsData = Array.isArray(res.data) 
-        ? res.data 
-        : (res.data?.data || res.data?.products || []);
-      setProducts(Array.isArray(productsData) ? productsData : []);
+      console.log('[Products] API Response:', {
+        isArray: Array.isArray(res.data),
+        hasData: !!res.data?.data,
+        hasProducts: !!res.data?.products,
+        dataType: typeof res.data,
+        dataKeys: res.data && !Array.isArray(res.data) ? Object.keys(res.data) : null
+      });
+      
+      // Admin API returns array of products directly
+      const productsData = Array.isArray(res.data) ? res.data : [];
+      
+      if (isMountedRef.current) {
+        setProducts(productsData);
+      }
     } catch (err) {
-      console.error('Failed to fetch products:', err);
-      setProducts([]); // Set empty array on error
+      console.error('[Products] Failed to fetch products:', err);
+      if (isMountedRef.current) {
+        setProducts([]); // Set empty array on error
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
+    isMountedRef.current = true;
     loadProducts();
-    // Refresh products every 5 seconds for real-time updates
-    const interval = setInterval(loadProducts, 5000);
-    return () => clearInterval(interval);
-  }, []);
+
+    // Cleanup: Reset mounted flag on unmount
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []); // Load products on mount
 
   // Delete product
   const handleDelete = async (id, productName) => {
@@ -101,19 +122,29 @@ export default function Products() {
               <thead>
                 <tr>
                   <th>Name</th>
+                  <th>Category</th>
+                  <th>Subcategory</th>
                   <th>Price</th>
                   <th>Stock</th>
+                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {products.map((p) => (
-                  <tr key={p._id}>
+                  <tr key={p._id} className={!p.isActive ? 'inactive-row' : ''}>
                     <td>{p.name}</td>
+                    <td>{p.categoryId?.name || 'N/A'}</td>
+                    <td>{p.subCategoryId?.name || 'N/A'}</td>
                     <td>${parseFloat(p.price || 0).toFixed(2)}</td>
                     <td>
                       <span className={`stock-badge ${p.stock === 0 ? 'out-of-stock' : p.stock >= 1 && p.stock <= 10 ? 'low-stock' : 'in-stock'}`}>
                         {p.stock === 0 ? 'OUT OF STOCK' : p.stock >= 1 && p.stock <= 10 ? `LOW STOCK (${p.stock})` : p.stock}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`status-badge ${p.isActive ? 'active' : 'inactive'}`}>
+                        {p.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td>

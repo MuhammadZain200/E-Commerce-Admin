@@ -80,7 +80,8 @@
   color: #333;
 }
 
-.product-modal-form-group input {
+.product-modal-form-group input,
+.product-modal-form-group select {
   width: 100%;
   padding: 12px 16px;
   border: 2px solid #e5e7eb;
@@ -90,7 +91,8 @@
   box-sizing: border-box;
 }
 
-.product-modal-form-group input:focus {
+.product-modal-form-group input:focus,
+.product-modal-form-group select:focus {
   outline: none;
   border-color: #f97316;
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
@@ -98,6 +100,16 @@
 
 .product-modal-form-group input::placeholder {
   color: #9ca3af;
+}
+
+.product-modal-form-group select:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.product-modal-form-group .required {
+  color: #dc3545;
 }
 
 /* Error Message */

@@ -19,6 +19,11 @@ const subCategorySchema = new mongoose.Schema(
       ref: 'Category',
       required: [true, 'Category ID is required'],
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+      // If false, subcategory is soft-deleted (hidden from users but visible to admin)
+    },
   },
   { timestamps: true }
 );
