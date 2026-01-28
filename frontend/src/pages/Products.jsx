@@ -153,7 +153,8 @@ export default function Products() {
                           <button onClick={() => openEditModal(p)} className="edit-btn">
                             Edit
                           </button>
-                          <button onClick={() => handleDelete(p._id, p.name)} className="delete-btn">
+                          {/* Use a product-specific delete button class to avoid conflicts with other pages (e.g., UserCart) */}
+                          <button onClick={() => handleDelete(p._id, p.name)} className="product-delete-btn">
                             Delete
                           </button>
                         </>

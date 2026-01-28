@@ -184,7 +184,7 @@
   box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
 
-.delete-btn {
+.product-delete-btn {
   background-color: #ef4444;
   color: #fff;
   padding: 8px 16px;
@@ -196,7 +196,7 @@
   transition: all 0.2s;
 }
 
-.delete-btn:hover {
+.product-delete-btn:hover {
   background-color: #dc2626;
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
