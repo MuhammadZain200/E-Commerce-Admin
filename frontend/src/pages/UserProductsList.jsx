@@ -15,7 +15,7 @@ import './UserProductsList.css';
 
 export default function UserProductsList() {
   const { user } = useAuth();
-  const { refreshCart } = useCart();
+  const { updateCartFromData } = useCart();
   const { success, error: showError } = useNotification();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -174,8 +174,11 @@ export default function UserProductsList() {
   const handleAddToCart = async (productId, productName) => {
     try {
       setAddingToCart({ ...addingToCart, [productId]: true });
-      await addToCart(productId, 1);
-      refreshCart();
+      const response = await addToCart(productId, 1);
+      // Use cart data from response instead of making another API call
+      if (response.success && response.data) {
+        updateCartFromData(response.data);
+      }
       success(`${productName} added to cart!`);
     } catch (err) {
       showError(err.response?.data?.message || 'Failed to add to cart');

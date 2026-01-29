@@ -16,7 +16,7 @@ export default function UserCart() {
   const { user } = useAuth();
   // Use cart from context instead of making duplicate API call
   // CartContext already fetches cart on mount and when user changes
-  const { cart: cartFromContext, refreshCart } = useCart();
+  const { cart: cartFromContext, refreshCart, updateCartFromData } = useCart();
   const { success, error: showError, info } = useNotification();
   const navigate = useNavigate();
   const [error, setError] = useState(null);
@@ -33,8 +33,11 @@ export default function UserCart() {
 
     try {
       setUpdating({ ...updating, [productId]: true });
-      await updateCartItem(productId, newQuantity);
-      refreshCart(); // Update global cart - no need for separate loadCart call
+      const response = await updateCartItem(productId, newQuantity);
+      // Use cart data from response instead of making another API call
+      if (response.success && response.data) {
+        updateCartFromData(response.data);
+      }
       success('Quantity updated successfully');
     } catch (err) {
       showError(err.response?.data?.message || 'Failed to update quantity');
@@ -45,8 +48,11 @@ export default function UserCart() {
 
   const handleRemoveItem = async (productId) => {
     try {
-      await removeFromCart(productId);
-      refreshCart(); // Update global cart - no need for separate loadCart call
+      const response = await removeFromCart(productId);
+      // Use cart data from response instead of making another API call
+      if (response.success && response.data) {
+        updateCartFromData(response.data);
+      }
       success('Item removed from cart');
     } catch (err) {
       showError(err.response?.data?.message || 'Failed to remove item');
@@ -56,7 +62,8 @@ export default function UserCart() {
   const handleClearCart = async () => {
     try {
       await clearCart();
-      refreshCart(); // Update global cart - no need for separate loadCart call
+      // clearCart doesn't return cart data, so refresh to get empty cart
+      refreshCart();
       success('Cart cleared successfully');
     } catch (err) {
       showError(err.response?.data?.message || 'Failed to clear cart');

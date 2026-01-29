@@ -72,8 +72,16 @@ export const CartProvider = ({ children }) => {
     loadCart();
   };
 
+  const updateCartFromData = useCallback((cartData) => {
+    if (cartData) {
+      setCart(cartData);
+      const itemCount = cartData.items?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+      setCartCount(itemCount);
+    }
+  }, []);
+
   return (
-    <CartContext.Provider value={{ cartCount, cart, refreshCart }}>
+    <CartContext.Provider value={{ cartCount, cart, refreshCart, updateCartFromData }}>
       {children}
     </CartContext.Provider>
   );
