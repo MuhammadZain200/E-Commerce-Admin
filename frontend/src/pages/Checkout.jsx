@@ -30,11 +30,12 @@ export default function Checkout() {
   const loading = cart === null && !error; // Loading if cart is null and no error yet
 
   // Redirect to cart if empty (using effect to handle context updates)
+  // But don't redirect if we're processing an order or have just placed one
   useEffect(() => {
-    if (cart !== null && (!cart.items || cart.items.length === 0)) {
+    if (cart !== null && (!cart.items || cart.items.length === 0) && !processing && !orderPlaced) {
       navigate('/user/cart');
     }
-  }, [cart, navigate]);
+  }, [cart, navigate, processing, orderPlaced]);
 
   const handlePlaceOrderClick = () => {
     // Show confirmation modal
@@ -49,14 +50,21 @@ export default function Checkout() {
       setProcessing(true);
       setError(null);
       const response = await checkoutFromCart();
-      if (response.success) {
+      // Check response.data.success since axios wraps the response
+      if (response.data?.success || response.status === 201) {
+        // Mark order as placed to prevent redirect to cart
         setOrderPlaced(true);
-        refreshCart(); // Clear cart count in context (cart will be null after refresh)
+        // Reset processing state immediately
+        setProcessing(false);
+        // Refresh cart to clear it (cart will be empty after checkout)
+        refreshCart();
         success('Order placed successfully! Redirecting to your orders...');
-        // Redirect immediately after showing success
+        // Navigate to orders page (clears order summary, updates button)
         setTimeout(() => {
           navigate('/user/orders');
-        }, 2000);
+        }, 500);
+      } else {
+        throw new Error('Order placement failed');
       }
     } catch (err) {
       const errorMsg = err.response?.data?.message || 'Failed to place order';
@@ -95,9 +103,9 @@ export default function Checkout() {
     );
   }
 
-  // Redirect to cart if no items
-  if (!cart || !cart.items || cart.items.length === 0) {
-    return null; // Will redirect
+  // Redirect to cart if no items (but not if order was just placed)
+  if ((!cart || !cart.items || cart.items.length === 0) && !orderPlaced && !processing) {
+    return null; // Will redirect via useEffect
   }
 
   return (
