@@ -5,11 +5,11 @@
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
-    "dev": "concurrently \"nodemon server/server.js\" \"npm run frontend\"",
-    "frontend": "cd frontend && npm start",
-    "build": "cd frontend && npm run build",
-    "test": "cd frontend && npm test",
-    "eject": "cd frontend && npm run eject"
+    "dev": "concurrently \"nodemon server/server.js\" \"npm --prefix frontend start\"",
+    "frontend": "npm --prefix frontend start",
+    "build": "npm --prefix frontend run build",
+    "test": "npm --prefix frontend test",
+    "eject": "npm --prefix frontend eject"
   },
   "keywords": [],
   "author": "",
