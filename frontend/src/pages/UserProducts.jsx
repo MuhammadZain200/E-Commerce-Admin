@@ -10,16 +10,6 @@ import { getCategories } from '../api/userProducts';
 import UserLayout from '../components/UserLayout';
 import './UserProducts.css';
 
-// ============================================
-// MODULE-LEVEL GUARD: Persists across component remounts
-// ============================================
-// React StrictMode unmounts and remounts components, which resets useRef.
-// A module-level variable persists across all component instances, preventing
-// duplicate calls even when StrictMode causes remounts.
-// ============================================
-let hasFetchedCategories = false;
-let isFetchingCategories = false;
-
 export default function UserProducts() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -27,42 +17,47 @@ export default function UserProducts() {
   const [loading, setLoading] = useState(true);
   const [selectedFilter, setSelectedFilter] = useState('All Collections');
   
-  // Component-level ref for tracking current mount instance
+  // Component-level refs for tracking fetch state
+  // These reset when component unmounts, allowing fresh fetch on remount
   const isMountedRef = useRef(true);
+  const hasFetchedCategoriesRef = useRef(false);
+  const isFetchingCategoriesRef = useRef(false);
 
   useEffect(() => {
     console.log('[UserProducts] Categories useEffect triggered', {
-      hasFetchedCategories,
-      isFetchingCategories,
+      hasFetched: hasFetchedCategoriesRef.current,
+      isFetching: isFetchingCategoriesRef.current,
       user: user ? { id: user._id, role: user.role } : null,
       timestamp: new Date().toISOString()
     });
 
-    // Guard 1: Already fetched (module-level, persists across remounts)
-    if (hasFetchedCategories) {
-      console.log('[UserProducts] Categories API call BLOCKED - already fetched (module-level guard)');
+    // Guard 1: Already fetched in this mount cycle
+    if (hasFetchedCategoriesRef.current) {
+      console.log('[UserProducts] Categories API call BLOCKED - already fetched in this mount');
       return;
     }
 
     // Guard 2: Currently fetching (prevents concurrent calls)
-    if (isFetchingCategories) {
+    if (isFetchingCategoriesRef.current) {
       console.log('[UserProducts] Categories API call BLOCKED - fetch in progress');
       return;
     }
     
-    console.log('[UserProducts] Categories API call ALLOWED - first mount');
-    hasFetchedCategories = true;
-    isFetchingCategories = true;
+    console.log('[UserProducts] Categories API call ALLOWED - fetching data');
+    hasFetchedCategoriesRef.current = true;
+    isFetchingCategoriesRef.current = true;
     isMountedRef.current = true;
     
     loadCategories().finally(() => {
-      isFetchingCategories = false;
+      isFetchingCategoriesRef.current = false;
       console.log('[UserProducts] Categories API call completed');
     });
 
-    // Cleanup: Reset mounted flag on unmount
+    // Cleanup: Reset flags on unmount to allow fresh fetch on next mount
     return () => {
       isMountedRef.current = false;
+      hasFetchedCategoriesRef.current = false;
+      isFetchingCategoriesRef.current = false;
     };
   }, []); // Empty deps: categories API is public, doesn't depend on user/auth
 

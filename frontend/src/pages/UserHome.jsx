@@ -12,15 +12,9 @@ import { addToCart } from '../api/cart';
 import UserLayout from '../components/UserLayout';
 import './UserHome.css';
 
-// ============================================
-// MODULE-LEVEL GUARD: Persists across component remounts
-// ============================================
-// React StrictMode unmounts and remounts components, which resets useRef.
-// A module-level variable persists across all component instances, preventing
-// duplicate calls even when StrictMode causes remounts.
-// ============================================
-let hasFetchedData = false;
-let isFetching = false;
+// Module-level flag to prevent duplicate API calls across StrictMode remounts
+// Set synchronously before async operations to prevent duplicate calls
+let isFetchingHomeData = false;
 
 export default function UserHome() {
   const { user } = useAuth();
@@ -33,35 +27,38 @@ export default function UserHome() {
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState({});
   
-  // Component-level ref for tracking current mount instance
-  // This helps with cleanup if component unmounts during fetch
+  // Component-level refs for tracking mount state
   const isMountedRef = useRef(true);
+  const hasInitiatedFetchRef = useRef(false);
 
   useEffect(() => {
     console.log('[UserHome] Data fetch useEffect triggered', {
-      hasFetchedData,
-      isFetching,
+      isFetchingHomeData,
+      hasInitiatedFetch: hasInitiatedFetchRef.current,
+      hasCategories: categories.length > 0,
+      hasProducts: featuredProducts.length > 0,
       user: user ? { id: user._id, role: user.role } : null,
       timestamp: new Date().toISOString()
     });
 
-    // Guard 1: Already fetched (module-level, persists across remounts)
-    if (hasFetchedData) {
-      console.log('[UserHome] API calls BLOCKED - already fetched (module-level guard)');
+    // Guard 1: If we already have data, don't fetch again (handles StrictMode remount after fetch completes)
+    if (categories.length > 0 || featuredProducts.length > 0) {
+      console.log('[UserHome] API calls BLOCKED - already have data');
+      setLoading(false);
       return;
     }
 
-    // Guard 2: Currently fetching (prevents concurrent calls)
-    if (isFetching) {
-      console.log('[UserHome] API calls BLOCKED - fetch in progress');
+    // Guard 2: Prevent duplicate calls if already fetching (module-level check prevents StrictMode duplicates)
+    if (isFetchingHomeData) {
+      console.log('[UserHome] API calls BLOCKED - already fetching (module-level guard)');
       return;
     }
     
-    console.log('[UserHome] API calls ALLOWED - first mount');
-    hasFetchedData = true;
-    isFetching = true;
-    
-    // Set mounted flag for cleanup
+    console.log('[UserHome] API calls ALLOWED - fetching data');
+    // Set module-level flag synchronously before any async operations
+    // This prevents StrictMode remount from triggering duplicate call
+    isFetchingHomeData = true;
+    hasInitiatedFetchRef.current = true;
     isMountedRef.current = true;
     
     // Execute both API calls
@@ -69,11 +66,15 @@ export default function UserHome() {
       loadCategories(),
       loadFeaturedProducts()
     ]).finally(() => {
-      isFetching = false;
+      // Reset module-level flag only after fetch completes
+      // This allows fresh fetch when navigating back to home page
+      isFetchingHomeData = false;
       console.log('[UserHome] All API calls completed');
     });
 
-    // Cleanup: Reset mounted flag on unmount
+    // Cleanup: Only reset component-level flag
+    // Don't reset module-level flag here - it prevents StrictMode duplicate calls
+    // It will be reset after fetch completes, allowing fresh fetch on actual navigation
     return () => {
       isMountedRef.current = false;
     };
