@@ -1,12 +1,13 @@
 // backend/server.js
 
-// Load environment variables
-require('dotenv').config();
+const path = require('path');
+
+// Load .env from project root (works regardless of where you run node from)
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const path = require('path');
 
 const app = express();
 
