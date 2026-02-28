@@ -7,6 +7,55 @@ const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 const Settings = require('../models/Settings');
 
+// Build normalized cart response (same shape for getCart, updateCartItem, removeFromCart)
+async function buildCartResponse(cart) {
+  if (!cart || !cart.items || cart.items.length === 0) {
+    const settings = await Settings.getSettings();
+    const taxRate = settings.taxRate || 0;
+    return {
+      items: [],
+      totalAmount: 0,
+      taxRate,
+      taxAmount: 0,
+      totalWithTax: 0,
+      itemCount: 0,
+    };
+  }
+  const validItems = [];
+  let totalAmount = 0;
+  for (const item of cart.items) {
+    const product = item.productId;
+    if (product && product.isActive && product.stock > 0) {
+      const quantity = Math.min(item.quantity, product.stock);
+      const itemTotal = product.price * quantity;
+      totalAmount += itemTotal;
+      validItems.push({
+        productId: product._id,
+        product: {
+          _id: product._id,
+          name: product.name,
+          price: product.price,
+          stock: product.stock,
+        },
+        quantity,
+        itemTotal,
+      });
+    }
+  }
+  const settings = await Settings.getSettings();
+  const taxRate = settings.taxRate || 0;
+  const taxAmount = (totalAmount * taxRate) / 100;
+  const totalWithTax = totalAmount + taxAmount;
+  return {
+    items: validItems,
+    totalAmount: Math.round(totalAmount * 100) / 100,
+    taxRate,
+    taxAmount: Math.round(taxAmount * 100) / 100,
+    totalWithTax: Math.round(totalWithTax * 100) / 100,
+    itemCount: validItems.length,
+  };
+}
+
 // ============================================
 // GET /api/cart
 // ============================================
@@ -172,13 +221,13 @@ exports.addToCart = async (req, res) => {
 
     await cart.save();
 
-    // Populate and return updated cart
-    await cart.populate('items.productId', 'name price stock isActive');
+    const updatedCart = await Cart.findOne({ userId }).populate('items.productId', 'name price stock isActive');
+    const data = await buildCartResponse(updatedCart);
 
     res.json({
       success: true,
       message: 'Item added to cart successfully',
-      data: cart,
+      data,
     });
   } catch (error) {
     console.error('Add to cart error:', error);
@@ -256,12 +305,13 @@ exports.updateCartItem = async (req, res) => {
     cart.items[itemIndex].quantity = quantity;
     await cart.save();
 
-    await cart.populate('items.productId', 'name price stock isActive');
+    const updatedCart = await Cart.findOne({ userId }).populate('items.productId', 'name price stock isActive');
+    const data = await buildCartResponse(updatedCart);
 
     res.json({
       success: true,
       message: 'Cart item updated successfully',
-      data: cart,
+      data,
     });
   } catch (error) {
     console.error('Update cart item error:', error);
@@ -298,10 +348,13 @@ exports.removeFromCart = async (req, res) => {
 
     await cart.save();
 
+    const updatedCart = await Cart.findOne({ userId }).populate('items.productId', 'name price stock isActive');
+    const data = await buildCartResponse(updatedCart);
+
     res.json({
       success: true,
       message: 'Item removed from cart successfully',
-      data: cart,
+      data,
     });
   } catch (error) {
     console.error('Remove from cart error:', error);

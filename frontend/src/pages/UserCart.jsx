@@ -138,40 +138,45 @@ export default function UserCart() {
 
         <div className="cart-main-content">
           <div className="cart-items-section">
-            {cart.items.map((item) => (
-              <div key={item.productId} className="cart-item-card">
+            {cart.items.map((item) => {
+              // API may return product as item.product (getCart) or item.productId when populated (update/remove)
+              const product = item.product || (item.productId && typeof item.productId === 'object' ? item.productId : null);
+              const productId = item.productId?._id?.toString?.() || item.productId?.toString?.() || item.productId;
+              if (!product) return null; // skip items with missing product data
+              return (
+              <div key={productId} className="cart-item-card">
                 <div className="item-image">
                   <div className="item-image-placeholder">
-                    {item.product.name.charAt(0).toUpperCase()}
+                    {(product.name || '?').charAt(0).toUpperCase()}
                   </div>
                 </div>
                 <div className="item-details">
-                  <h3 className="item-name">{item.product.name}</h3>
+                  <h3 className="item-name">{product.name || 'Unknown product'}</h3>
                   <p className="item-specs">
-                    {item.product.stock === 0 ? (
+                    {product.stock === 0 ? (
                       <span className="stock-warning-out">⚠️ OUT OF STOCK</span>
-                    ) : item.product.stock <= 10 ? (
-                      <span className="stock-warning-low">⚠️ Low Stock: {item.product.stock} available</span>
+                    ) : product.stock <= 10 ? (
+                      <span className="stock-warning-low">⚠️ Low Stock: {product.stock} available</span>
                     ) : (
-                      <span>Stock: {item.product.stock} | SKU: {item.productId.slice(-8)}</span>
+                      <span>Stock: {product.stock} | SKU: {String(productId).slice(-8)}</span>
                     )}
                   </p>
-                  <div className="item-price">${item.product.price.toFixed(2)}</div>
+                  <div className="item-price">${Number(product.price || 0).toFixed(2)}</div>
                 </div>
                 <div className="item-quantity">
                   <div className="quantity-controls">
                     <button
                       className="qty-btn"
-                      onClick={() => handleQuantityChange(item.productId, item.quantity - 1)}
-                      disabled={updating[item.productId] || item.quantity <= 1}
+                      onClick={() => handleQuantityChange(productId, item.quantity - 1)}
+                      disabled={updating[productId] || item.quantity <= 1}
                     >
                       −
                     </button>
                     <span className="qty-value">{item.quantity}</span>
                     <button
                       className="qty-btn"
-                      onClick={() => handleQuantityChange(item.productId, item.quantity + 1)}
-                      disabled={updating[item.productId] || item.quantity >= item.product.stock}
+                      onClick={() => handleQuantityChange(productId, item.quantity + 1)}
+                      disabled={updating[productId] || item.quantity >= (product.stock ?? 0)}
                     >
                       +
                     </button>
@@ -180,15 +185,16 @@ export default function UserCart() {
                 <div className="item-actions">
                   <button
                     className="delete-btn"
-                    onClick={() => handleRemoveItem(item.productId)}
-                    disabled={updating[item.productId]}
+                    onClick={() => handleRemoveItem(productId)}
+                    disabled={updating[productId]}
                     title="Remove item"
                   >
                     🗑️
                   </button>
                 </div>
               </div>
-            ))}
+            );
+            })}
 
             <div className="cart-actions">
               <button className="continue-shopping-btn" onClick={() => navigate('/user/products')}>
